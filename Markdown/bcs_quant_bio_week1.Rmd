@@ -1,0 +1,50 @@
+---
+title: "BCS BIO 5504 - Week Two Assignment"
+author: "Ben Stalheim"
+date: "2026-01-22"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include=FALSE}
+library(tidyverse)
+```
+
+# **Data Dictionary:**
+
+This dataset contains detections of bird species using passive acoustic monitoring and a machine learning model called BirdNET. Included in the data are information on date, time, site, location, and time within the raw audio file. The dataset spans 2023-2025 and data were collected from 27 monitoring points (sites) within 3 different locations. All data were collected in southeastern Georgia, USA, during June and July.
+
+-   Load the dataset (I already did quite a bit of cleaning to this dataset). This is just showing the first few rows:
+
+```{r, include=FALSE}
+birdnet_data <- read_csv("bn_dat_allyears.csv") |> 
+  select(common_name, sp_code, confidence, date, time, year, site, location)
+```
+
+```{r, echo = FALSE}
+head(birdnet_data)
+```
+
+# Data Structure
+
+-   This shows the names of the columns, types of data, and dimensions of the dataset:
+
+```{r}
+colnames(birdnet_data)
+str(birdnet_data)
+dim(birdnet_data)
+```
+
+# Data Summary
+
+-   Counts of the number of detections for each species in the dataset:
+
+```{r, echo=FALSE}
+raw_detections <- birdnet_data |> 
+  count(common_name, name = "detections") |> 
+  arrange(desc(detections))
+head(raw_detections)
+```
