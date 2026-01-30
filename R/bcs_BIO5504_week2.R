@@ -16,7 +16,7 @@ library(tidyverse)
 
 
 # Load the dataset (I already did quite a bit of cleaning to this dataset)
-birdnet_data <- read_csv("Data/bn_dat_allyears.csv") |> 
+birdnet_data <- readRDS("Data/birdnet_data.rds") |> 
   select(common_name, sp_code, confidence, date, time, year, site, location)
 
 # View the data (this dataset is a little big, I apologize)
