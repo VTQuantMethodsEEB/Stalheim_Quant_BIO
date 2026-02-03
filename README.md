@@ -6,8 +6,8 @@ My dataset contains bird detections made using autonomous recording units (ARUs)
 
 ## Week 1
 - Course: We learned about R and Rstudio and other introductions to coding. I made a script that read in my data file, did some standard manipulations and exploring, and also created an RMarkdown file. 
-- Data: bn_dat_allyears.RDS
+- Data: bn_dat_allyears.rds
 
 ## Week 2
 - Course: We were snowed out. But, we also learned about Github and how to set up repositories, link them to the class organization, and store them on our machines. We vowed to pull, commit, and push all changes. 
-- Challenges: My CSV file was > 1GB, which exceeds the 100MB limit that Github allows for pushing and pulling. I finally realized I could convert it to an R data file (.RDS), and this smaller file can now be pushed. 
+- Challenges: My CSV file was > 1GB, which exceeds the 100MB limit that Github allows for pushing and pulling. I finally realized I could convert it to an R data file (.rds), and this smaller file can now be pushed. 
