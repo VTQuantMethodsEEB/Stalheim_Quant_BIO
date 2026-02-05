@@ -73,3 +73,4 @@ species_matrix_wide <- species_matrix |>
 # Shows raw counts by date (note that 2023 did not have as many sites, so less total count)
 ggplot(species_matrix, aes(x = date, y = count)) +
   geom_col()
+x <- split(bn_dat_filtered, common_name)
