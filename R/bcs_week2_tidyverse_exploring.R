@@ -6,15 +6,15 @@
 # Required Packages
 library(tidyverse)
 
-# Load the R data file
-bn_dat <- readRDS("data/birdnet_data.rds")
+# Load the R data file (it automatically assigns the name as bn_dat_allyears)
+load("Data/RDS/bn_dat_allyears.rds")
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #     Tidyverse Exploration
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Filter ~~~~~~~~~~~~~~~~~~~~~
 
-sparrow <- bn_dat |> 
+sparrow <- bn_dat_allyears |> 
   filter(common_name == "Bachman's Sparrow")
 # This filters the dataset to only include detections of Bachman's Sparrow.
 # But not all detections are correct, or of interest. I know that a confidence
@@ -25,7 +25,7 @@ sparrow_high_conf <- sparrow |>
 # Now I have a dataset of only high-confidence Bachman's Sparrow detections.
 
 # I could also set a universal confidence score threshold of 0.8 for all species.
-bn_dat_filtered <- bn_dat |> 
+bn_dat_filtered <- bn_dat_allyears |> 
   filter(confidence >= 0.8)
 
 # Find the data where site is NA
@@ -57,3 +57,15 @@ bn_dat_filtered <- bn_dat_filtered |>
 # Add Julian Day as a column
 bn_dat_filtered <- bn_dat_filtered |> 
   mutate(julian_day = lubridate::yday(date))
+
+# Pivot ~~~~~~~~~~~~~~~~~~~~~~~
+
+# Turn the dataset into a wide dataset, first making a matrix
+species_matrix <- bn_dat_filtered |> 
+  group_by(common_name, site, date) |> 
+  summarise(count = n()) |> 
+  arrange(date)
+
+species_matrix_wide <- species_matrix |> 
+  pivot_wider(names_from = common_name,
+              values_from = count)
