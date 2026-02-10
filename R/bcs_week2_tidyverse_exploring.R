@@ -31,7 +31,7 @@ bn_dat_filtered <- bn_dat_allyears |>
 # Find the data where site is NA
 missing_site_data <- bn_dat_filtered |> 
   filter(is.na(site))
-# I actually need to figure out where this data came from eventually...
+# No missing site data in this dataset
 
 # Summarize ~~~~~~~~~~~~~~~~~~~~~
 
@@ -39,14 +39,15 @@ missing_site_data <- bn_dat_filtered |>
 species_per_site <- bn_dat_filtered |> 
   group_by(site) |> 
   summarize(num_species = n_distinct(common_name)) |> 
-  arrange(desc(num_species))
-species_per_site
+  arrange(desc(num_species)) |> 
+  print()
 
 species_per_year <- bn_dat_filtered |> 
   group_by(year) |> 
   summarize(num_species = n_distinct(common_name)) |> 
-  arrange(desc(num_species))
-species_per_year
+  arrange(desc(num_species)) |> 
+  print()
+
 
 # Mutate ~~~~~~~~~~~~~~~~~~~~~
 
@@ -73,3 +74,4 @@ species_matrix_wide <- species_matrix |>
 # Shows raw counts by date (note that 2023 did not have as many sites, so less total count)
 ggplot(species_matrix, aes(x = date, y = count)) +
   geom_col()
+
