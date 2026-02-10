@@ -65,11 +65,13 @@ bn_dat_filtered <- bn_dat_filtered |>
 species_matrix <- bn_dat_filtered |> 
   group_by(common_name, site, date) |> 
   summarise(count = n()) |> 
-  arrange(date)
+  arrange(date) |> 
+  print()
 
 species_matrix_wide <- species_matrix |> 
   pivot_wider(names_from = common_name,
-              values_from = count)
+              values_from = count) |> 
+  print()
 
 # Shows raw counts by date (note that 2023 did not have as many sites, so less total count)
 ggplot(species_matrix, aes(x = date, y = count)) +
