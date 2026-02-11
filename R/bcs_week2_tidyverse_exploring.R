@@ -77,3 +77,66 @@ species_matrix_wide <- species_matrix |>
 ggplot(species_matrix, aes(x = date, y = count)) +
   geom_col()
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#    Some Updated Exploration
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+load("Data/RDS/bn_data_thresholded.rds")
+
+# There is no data from the Okefenokee for 2023, so I am removing it here for community analysis comparison
+bn_data <- bn_data |> 
+  filter(year != "2023")
+
+# How many species are represented in the dataset
+n_distinct(bn_data$common_name)
+
+# How many species were detected at each location over all years
+bn_data |> 
+  group_by(location) |> 
+  summarise(species_count = n_distinct(common_name)) |> 
+  arrange(desc(species_count))
+
+# How many species were detected at each location, broken down by years
+bn_data |> 
+  group_by(location, year) |> 
+  summarise(species_count = n_distinct(common_name)) |> 
+  arrange(desc(species_count))
+
+# Species Matrices ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+species_matrix <- bn_data |> 
+  group_by(common_name, date, site) |> 
+  summarise(count = n()) |> 
+  arrange(date) |> 
+  print()
+
+species_matrix_wide <- species_matrix |> 
+  pivot_wider(names_from = common_name,
+              values_from = count) |> 
+  print()
+
+# Species Summaries ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+species_summary <- bn_data |> 
+  group_by(common_name) |> 
+  summarise(raw_detections = n(),
+            days_detected = n_distinct(date),
+            most_common_location = names(which.max(table(location))),
+            most_common_year = names(which.max(table(year))),
+            .groups = "drop") |> 
+  arrange(desc(raw_detections)) |> 
+  print()
+
+species <- bn_data |> 
+  filter(sp_code == "BACS") |> 
+  group_by(location, year) |> 
+  summarise(detection = n()) |> 
+  print()
+
+# Change as needed
+abundant_species <- bn_data |> 
+  filter(sp_code %in% c("CWWI", "EATO", "CONI")) |> 
+  group_by(location, year) |> 
+  summarise(detection = n()) |> 
+  print()
+
+# ~ 25% of my data are just Eastern Towhee detections
+# And another 25% are just Common Nighthawk detections
+# 65% of my data are CWWI, EATO, and CONI detections!!
