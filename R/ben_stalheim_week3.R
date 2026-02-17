@@ -7,12 +7,14 @@
 # Load packages
 library(tidyverse)
 library(viridis) # For some fun colors
-library(vegan) # For NMDS plot
+library(vegan)
+library(ggthemes)
 
 # Load data (This is my birdnet data that I filtered by applying species-specific
 # confidence or logit score thresholds to).
 load("Data/RDS/bn_data_thresholded.rds")
 
+bacs_master_temp <- read_csv("Data/CSVs/bacs_master_temp.csv")
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #     Plotting Exercies
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -31,6 +33,56 @@ bn_data |>
 # not sampled in 2023, so they only have data from 2024 and 2025. I like looking at 
 # this basic plot to get a feel for differences across locations and volatility over years.
 
+# I need to convert my categorical variables to factors to get this theme to work
+# This graph shows the relationship between recorded sound level using an ARU and 
+# distance. I recorded Bachman's Sparrows of known distance and extracted their sound
+# levels, which is present in this dataset under the dbfs column.
+bacs_master_temp <- bacs_master_temp |> 
+  mutate(treatment = factor(treatment, 
+                            levels = c("okefenokee", "mine", "sansavilla")))
+
+ggplot(data = bacs_master_temp, aes(x = distance, y = dbfs, color = treatment)) +
+  geom_point(size = 2.5) +
+  scale_color_few(labels = c("Okefenokee NWR", "Mission Mine", "Sansavilla WMA")) +  
+  labs(x = "Distance (m)", y = "Decibels at Full Scale (dBFS)", 
+       color = "Recording Locations",
+       title = "Relationship Between Recorded Sound Level and Distance for Bachman's Sparrows") +
+  theme_minimal() +
+  theme(panel.background = element_rect(fill = "gray90", color = "black"),
+        panel.grid.major = element_line(color = "lightgray"),
+        panel.grid.minor = element_line(color = "lightgray"),
+        legend.background = element_rect(fill = "white", color = "black"),
+        legend.position = "inside",
+        legend.position.inside = c(0.85, 0.85),
+        legend.justification = c(0.7, 0.75),
+        legend.text = element_text(size = 12),
+        axis.title = element_text(size = 10),
+        axis.text = element_text(size = 10),
+        plot.title = element_text(size = 14, hjust = 0.5),
+        plot.margin = margin(t = 10, r = 20, b = 10, l = 20))
+
+# Same plot but with a line fit to the data points
+
+ggplot(data = bacs_master_temp, aes(x = distance, y = dbfs)) +
+  geom_point(aes(color = treatment), size = 2.5) +
+  geom_smooth(method = "gam", se = T, color = "black") +
+  scale_color_few(labels = c("Okefenokee NWR", "Mission Mine", "Sansavilla WMA")) +  
+  labs(x = "Distance (m)", y = "Decibels at Full Scale (dBFS)", 
+       color = "Recording Locations",
+       title = "Relationship Between Recorded Sound Level and Distance for Bachman's Sparrows") +
+  theme_minimal() +
+  theme(panel.background = element_rect(fill = "gray90", color = "black"),
+        panel.grid.major = element_line(color = "lightgray"),
+        panel.grid.minor = element_line(color = "lightgray"),
+        legend.background = element_rect(fill = "white", color = "black"),
+        legend.position = "inside",
+        legend.position.inside = c(0.85, 0.85),
+        legend.justification = c(0.7, 0.75),
+        legend.text = element_text(size = 12),
+        axis.title = element_text(size = 10),
+        axis.text = element_text(size = 10),
+        plot.title = element_text(size = 14, hjust = 0.5),
+        plot.margin = margin(t = 10, r = 20, b = 10, l = 20))
 
 # NMDS Plot (need to prep first) ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 species_matrix_2 <- bn_data |> 
@@ -115,11 +167,11 @@ sparrows <- bn_data |>
 ggplot(sparrows, aes(x = date)) +
   geom_histogram(fill = "gray", color = "black") +
   labs(
-    title = "Bachman's Sparrow Detections Date in 2025",
-    x = element_blank(),
+    title = "Bachman's Sparrow Detections in 2025",
+    x = NULL,
     y = "Detection Count") +
   theme_minimal() +
-  theme(axis.text.x = element_text(color = "black", size = 12, 
+  theme(axis.text.x = element_text(color = "black", size = 11, 
                                    angle = 25, hjust = 1, vjust = 1.5))
 # This shows me when they were detected the most. It shows that they were detected
 # more in July than in June, which is really interesting actually!
