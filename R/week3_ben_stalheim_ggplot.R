@@ -10,14 +10,105 @@ library(viridis) # For some fun colors
 library(vegan)
 library(ggthemes)
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#     Load Necessary Dataset
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 # Load data (This is my birdnet data that I filtered by applying species-specific
 # confidence or logit score thresholds to).
 load("Data/RDS/bn_data_thresholded.rds")
 
+# Dataset containing recorded sound levels (dBFS) and known distances to singing Bachman's Sparrows
 bacs_master_temp <- read_csv("Data/CSVs/bacs_master_temp.csv")
+
+# 2025 Dataset containing all of the detected Bachman's Sparrows above the 95% threshold
+bacs_2025_whole_year <- read_csv("Data/CSVs/bacs_2025_log_distance_predictions.csv")
+
+# This contains my ARU effort for 2025. If a cell has an ARU name, that means that I 
+# was able to extract data and it was confirmed to have been recording at the site. NA values
+# indicate days where the ARU was not recording.
+aru_effort <- read_csv("Data/ARU_METADATA/ARU_timeline_2025.csv") |>
+  select(-"U-1") |>
+  mutate(date = mdy(date)) |>
+  pivot_longer(cols = -date, names_to = "aru_name", values_to = "surveyed") |>
+  filter(!is.na(surveyed)) |>
+  group_by(date) |>
+  summarise(num_arus = n(), .groups = "drop")
+# I am also prepping it for a plot here just to save some clutter below
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #     Plotting Exercies
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# One of my focuses is determining the vocalization patterns of the Bachman's Sparrow 
+# and when they are detected the most. This is a monthly plot that shows the number
+# of raw detections, but also gives some context with actual effort as the same number
+# ARUs were not always recording the birds throughout the whole timeframe
+
+# Bachman's Sparrow Detections 2025 ~~~~~~~~~~~~~~~
+# Prepare detection data
+bacs_2025_whole_year <- bacs_2025_whole_year |>
+  mutate(month = month(date, label = TRUE)) |>
+  filter(month != "Sep")
+
+# Calculate monthly summaries
+monthly_summary <- bacs_2025_whole_year |>
+  left_join(aru_effort, by = "date") |>
+  mutate(num_arus = replace_na(num_arus, 0)) |>
+  # Get unique ARU count per date
+  distinct(date, month, num_arus) |>
+  group_by(month) |>
+  summarise(
+    total_aru_days = sum(num_arus),  # Sum of ARUs across all days in month
+    .groups = "drop") |>
+  # Now join back to get total detections
+  left_join(
+    bacs_2025_whole_year |> 
+      group_by(month) |> 
+      summarise(total_detections = n(), .groups = "drop"),
+    by = "month") |>
+  mutate(
+    detections_per_aru_day = total_detections / total_aru_days,
+    date = case_when(
+      month == "Mar" ~ as.Date("2025-03-12"),
+      month == "Apr" ~ as.Date("2025-04-01"),
+      month == "May" ~ as.Date("2025-05-01"),
+      month == "Jun" ~ as.Date("2025-06-01"),
+      month == "Jul" ~ as.Date("2025-07-01"),
+      month == "Aug" ~ as.Date("2025-08-01")),
+    label = paste0("Total ARU-days: ", total_aru_days, "\n",
+                   "Det/ARU-day: ", round(detections_per_aru_day, 3))) |> 
+  print()
+
+# Plot with annotations
+ggplot(bacs_2025_whole_year, aes(x = date, fill = month)) +
+  geom_histogram(color = "black", binwidth = 1, alpha = 0.9) +
+  scale_fill_wsj() +
+  geom_text(data = monthly_summary, 
+            aes(x = date, y = Inf, label = label),
+            vjust = 1.5, hjust = 0, size = 3.5, inherit.aes = FALSE) +
+  facet_wrap(~month, scales = "free_x", ncol = 3, strip.position = "top") +
+  scale_y_continuous(breaks = seq(0, 250, by = 50),
+                     expand = expansion(mult = c(0, 0.15))) +
+  coord_cartesian(clip = "off") +
+  labs(
+    title = "Bachman's Sparrow Detections by Month in 2025",
+    x = NULL,
+    y = "Number of Detections",
+    fill = "Month") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.text = element_text(size = 12, vjust = -0.75),
+        legend.position = "none",
+        plot.margin = margin(t = 10, r = 10, b = 10, l = 10))
+
+# This figure shows how Bachman's Sparrows vary across months in the rate with which I
+# detected them. They appear to vocalize most frequently during the spring (especially April)
+# before quieting down in May and June. They then pick back up a little in July. This
+# is really important information to help learn about their patterns and when to survey
+# for the species.
+
 # Species Richness by site and year ~~~~~~~~~~~~~~~~~~~~~
 bn_data |>
   group_by(year, site) |>
@@ -82,6 +173,7 @@ ggplot(data = bacs_master_temp, aes(x = distance, y = dbfs)) +
         axis.text = element_text(size = 10),
         plot.title = element_text(size = 14, hjust = 0.5),
         plot.margin = margin(t = 10, r = 20, b = 10, l = 20))
+
 
 # NMDS Plot (need to prep first) ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 species_matrix_2 <- bn_data |> 
@@ -162,19 +254,41 @@ bn_data |>
 # I care about Bachman's Sparrows and when they are most active...
 sparrows <- bn_data |> 
   filter(sp_code == "BACS",
-         year == 2025)  
+         year == 2025) |> 
+  mutate(month = month(date, label = TRUE))
+
 ggplot(sparrows, aes(x = date)) +
   geom_histogram(fill = "gray", color = "black") +
+  facet_wrap(~month, scales = "free_x", ncol = 3) +
+  scale_y_continuous(breaks = seq(0, 250, by = 50),
+                     expand = expansion(mult = c(0, 0.15))) +
   labs(
-    title = "Bachman's Sparrow Detections in 2025",
+    title = "Bachman's Sparrow Detections by Month in 2025",
     x = NULL,
-    y = "Detection Count") +
+    y = "Detection Count"
+  ) +
   theme_minimal() +
-  theme(axis.text.x = element_text(color = "black", size = 11, 
-                                   angle = 25, hjust = 1, vjust = 1.5))
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.text = element_text(size = 14))
 # This shows me when they were detected the most. It shows that they were detected
-# more in July than in June, which is really interesting actually!
+# more in July than in June (mostly because an outlier day), which is really interesting actually!
 
+# Heatmap Style:
+sparrows <- bn_data |> 
+  filter(sp_code == "BACS", year == 2025) |>
+  mutate(hour = hour(time),  # extract hour from datetime
+         date_only = date(date))
+
+ggplot(sparrows, aes(x = date_only, y = hour, fill = ..count..)) +
+  geom_bin2d(binwidth = c(1, 1)) +
+  scale_fill_viridis_c(option = "plasma", name = "Detections") +
+  labs(
+    title = "Bachman's Sparrow Vocalizations by Time of Day (2025)",
+    x = "Date",
+    y = "Hour of Day (24-hour)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #      Turnover (Needs a little Prep)
