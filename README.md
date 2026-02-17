@@ -17,8 +17,8 @@ My dataset contains bird detections made using autonomous recording units (ARUs)
 
 ## Week 3
 - Course: Lessons in Data Visualization and keys to making quality graphics. We talked and explored ggplot() and all of the fun ways to make figures readable, fun, and informative. We practiced making some preliminary plots with our own data. I found it helpful to see examples of published figures and think about the ways they could have been improved. I am always very impressed with how some of these figures get made. It is so cool! 
-- **Data:** bn_data_thresholded.rds AND bacs_master_temp.csv (I mainly used the thresholded bird detection data, but did also use my sound level - distance dataset for one plot). 
-** R Script:** week3_ben_stalheim_ggplot
+- **Data:** bn_data_thresholded.rds AND bacs_master_temp.csv (I mainly used the thresholded bird detection data, but did also use my sound level - distance dataset for one plot).  
+- **R Script:** week3_ben_stalheim_ggplot
 
 ## Week 4
 - Course: 
