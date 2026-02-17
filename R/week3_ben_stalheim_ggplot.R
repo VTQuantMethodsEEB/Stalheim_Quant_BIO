@@ -77,6 +77,7 @@ monthly_summary <- bacs_2025_whole_year |>
       month == "Jul" ~ as.Date("2025-07-01"),
       month == "Aug" ~ as.Date("2025-08-01")),
     label = paste0("Total ARU-days: ", total_aru_days, "\n",
+                   "Total Detections:", total_detections,"\n",
                    "Det/ARU-day: ", round(detections_per_aru_day, 3))) |> 
   print()
 
@@ -86,9 +87,9 @@ ggplot(bacs_2025_whole_year, aes(x = date, fill = month)) +
   scale_fill_wsj() +
   geom_text(data = monthly_summary, 
             aes(x = date, y = Inf, label = label),
-            vjust = 1.5, hjust = 0, size = 3.5, inherit.aes = FALSE) +
+            vjust = 1.1, hjust = 0, size = 3, inherit.aes = FALSE) +
   facet_wrap(~month, scales = "free_x", ncol = 3, strip.position = "top") +
-  scale_y_continuous(breaks = seq(0, 250, by = 50),
+  scale_y_continuous(breaks = seq(0, 200, by = 50),
                      expand = expansion(mult = c(0, 0.15))) +
   coord_cartesian(clip = "off") +
   labs(
