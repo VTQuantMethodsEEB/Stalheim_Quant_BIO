@@ -7,13 +7,18 @@ My dataset contains bird detections made using autonomous recording units (ARUs)
 ## Week 1
 - Course: We learned about R and Rstudio and other introductions to coding. I made a script that read in my data file, did some standard manipulations and exploring, and also created an RMarkdown file. 
 - **Data:** bn_dat_allyears.rds
-- **R Script:** bcs_week1_intro
+- **R Script:** week1_ben_stalheim_intro
 
 ## Week 2
 - Course: We were snowed out. But, we also learned about Github and how to set up repositories, link them to the class organization, and store them on our machines. We vowed to pull, commit, and push all changes. 
 - Challenges: My CSV file was > 1GB, which exceeds the 100MB limit that Github allows for pushing and pulling. I finally realized I could convert it to an R data file (.rds), and this smaller file can now be pushed. 
 - **Data:** bn_dat_allyears.rds
-- **R Script:** bcs_week2_tidyverse
+- **R Script:** week2_ben_stalheim_tidyverse
 
 ## Week 3
-- Course: Lessons in Data Visualization and keys to making quality graphics.
+- Course: Lessons in Data Visualization and keys to making quality graphics. We talked and explored ggplot() and all of the fun ways to make figures readable, fun, and informative. We practiced making some preliminary plots with our own data. I found it helpful to see examples of published figures and think about the ways they could have been improved. I am always very impressed with how some of these figures get made. It is so cool! 
+- **Data:** bn_data_thresholded.rds AND bacs_master_temp.csv (I mainly used the thresholded bird detection data, but did also use my sound level - distance dataset for one plot). 
+** R Script:** week3_ben_stalheim_ggplot
+
+## Week 4
+- Course: 
