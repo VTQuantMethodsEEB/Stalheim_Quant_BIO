@@ -62,7 +62,6 @@ ggplot(data = bacs_master_temp, aes(x = distance, y = dbfs, color = treatment)) 
         plot.margin = margin(t = 10, r = 20, b = 10, l = 20))
 
 # Same plot but with a line fit to the data points
-
 ggplot(data = bacs_master_temp, aes(x = distance, y = dbfs)) +
   geom_point(aes(color = treatment), size = 2.5) +
   geom_smooth(method = "gam", se = T, color = "black") +
@@ -178,7 +177,7 @@ ggplot(sparrows, aes(x = date)) +
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#      Turnover
+#      Turnover (Needs a little Prep)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # There is no data from the Okefenokee for 2023, so I am removing it here for community analysis comparison
 bn_data2 <- bn_data |> 
@@ -281,33 +280,38 @@ turnover_summary <- turnover_table |>
 # Visualizations of Turnover ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Jaccard vs Nichols turnover scatter
 ggplot(turnover_table, aes(x = jaccard_dissimilarity, y = nichols_turnover)) +
-  geom_point(aes(color = location), size = 3, alpha = 0.7) +
-  geom_smooth(method = "lm", se = TRUE, color = "black", alpha = 0.2) +
-  labs(x = "Jaccard Dissimilarity", y = "Nichols Turnover", color = "Year Pair", shape = "Location") +
+  geom_point(aes(color = location), size = 3, alpha = 0.8) +
+  geom_smooth(method = "lm", se = TRUE, color = "black", alpha = 0.4) +
+  scale_color_viridis(discrete = T, option = "viridis") +
+  labs(x = "Jaccard Dissimilarity", y = "Nichols Turnover", color = "Location") +
   theme_minimal() +
-  theme(scale_fill_brewer(),
-    legend.position = "bottom")
+  theme(legend.position = "bottom")
 
 # Boxplot of Turnover by Location (with raw data points)
 ggplot(turnover_table, aes(x = location, y = nichols_turnover, fill = location)) +
-  geom_boxplot(alpha = 0.7) +
-  geom_jitter(width = 0.2, size = 2, alpha = 0.3) +
-  labs(title = "Nichols Turnover by Location", x = "Location", y = "Nichols Turnover") +
-  theme_minimal() +
-  theme(legend.position = "none")
+    geom_boxplot(alpha = 0.7) +
+    geom_jitter(width = 0.2, size = 2, alpha = 0.3) +
+    scale_fill_manual(values = c("brown3", "skyblue", "lightgreen")) +
+    labs(title = "Avian Community Turnover Among Locations Between 2024 and 2025", x = NULL, y = "Turnover") +
+    theme(legend.position = "none",
+          plot.title = element_text(size = 14, hjust = 0.5),
+          axis.title = element_text(size = 14), 
+          axis.text = element_text(size = 12, color = "black"))
 
 # Boxplot of Jaccard Dissimilarity by Location (with raw data points)
 ggplot(turnover_table, aes(x = location, y = jaccard_dissimilarity)) +
   geom_boxplot(aes(fill = location), alpha = 0.7) +
   geom_jitter(width = 0.2, size = 2, alpha = 0.3) +
-  labs(title = "Jaccard Dissimilarity by Location", x = "Location", y = "Jaccard Dissimilarity") +
-  theme_minimal() +
-  theme(legend.position = "none")
+  scale_fill_manual(values = c("brown3", "skyblue", "lightgreen")) +
+  labs(title = "Jaccard Dissimilarity Index Among Locations Between 2024 and 2025", x = NULL, y = "Turnover") +
+  theme(legend.position = "none",
+        plot.title = element_text(size = 14, hjust = 0.5),
+        axis.title = element_text(size = 14), 
+        axis.text = element_text(size = 12, color = "black"))
 
-
-ggplot(turnover_table, aes(x = reorder(site, nichols_turnover), y = nichols_turnover, fill = year_pair)) +
-  geom_col(position = "dodge") +
-  facet_wrap(~location, scales = "free_x") +
-  labs(title = "Site-Level Nichols Turnover Across Year Pairs", x = "Site", y = "Nichols Turnover", fill = "Year Pair") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "bottom")
+# These Box Plots show how Turnover and Jaccard Dissimilarity (Index for Turnover) 
+# vary among sites and locations. My hypothesis was that mine sites would have higher 
+# turnover rates than the other locations, because the community is less stable as vegetation
+# regrows post-mining. These two approaches measure communities slightly differently, which is
+# why there are some differences, but it clearly shows that mine sites have elevated 
+# turnover rates. 
