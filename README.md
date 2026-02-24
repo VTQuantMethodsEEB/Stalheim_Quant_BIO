@@ -21,4 +21,8 @@ My dataset contains bird detections made using autonomous recording units (ARUs)
 - **R Script:** week3_ben_stalheim_ggplot
 
 ## Week 4
-- Course: 
+- Course: Statistical philosphies. Importance of expanding beyond P-values. Class discussion on Thursday.
+- **Data:** NA
+- **R Script:** NA
+
+## Week 5
