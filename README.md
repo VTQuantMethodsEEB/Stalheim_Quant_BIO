@@ -26,3 +26,12 @@ My dataset contains bird detections made using autonomous recording units (ARUs)
 - **R Script:** NA
 
 ## Week 5
+- Course: We learned about different tests and how implement them in R. We practiced with permutation tests and writing for loops. We also practiced with classical tests like T-tests and correlation tests. 
+
+- **Hypotheses:** 
+    - Permutation: Mean species richness per monitoring point is greater at Sansavilla WMA (early successional longleaf pine forest) than at Mission Mine (reclaimed heavy mineral surface mine).
+
+    - Classic: There is a negative correlation between the number of detections/day of Northern Bobwhite and years since disturbance (reclamation) at the Mission Mine.
+
+- **Data:** bn_dat_filtered_95.rds (my newest filtered dataset)
+- **R Script:** week5_ben_stalheim_tests
