@@ -131,6 +131,14 @@ ggplot(nobo_mine, aes(x = yrs_since_disturbance, y = mean_detections_day, color 
     y = "Mean Detections/Day of NOBO") +
   theme_solarized(light=F)
 
+ggplot(nobo_mine, aes(x = yrs_since_disturbance, y = mean_detections_day, color = site)) +
+  geom_point(size = 3) +
+  geom_smooth(method = "lm", se = F, color = pal[3], fill = pal[5]) +
+  scale_color_brewer(palette = "Paired") +
+  labs(
+    x = "Years Since Mine Reclamation",
+    y = "Mean Detections/Day of NOBO") +
+  theme_solarized(light=T)
 
 # The plot shows a negative association between the mean detections/day for Bobwhite
 # and years since disturbance (reclamation). This aligns with my hypothesis,
