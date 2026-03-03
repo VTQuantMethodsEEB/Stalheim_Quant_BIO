@@ -33,5 +33,5 @@ My dataset contains bird detections made using autonomous recording units (ARUs)
 
     - Classic: There is a negative correlation between the number of detections/day of Northern Bobwhite and years since disturbance (reclamation) at the Mission Mine.
 
-- **Data:** bn_dat_filtered_95.rds (my newest filtered dataset)
+- **Data:** bn_dat_thresholded.rds
 - **R Script:** week5_ben_stalheim_tests

@@ -16,7 +16,12 @@ library(ggthemes)
 
 # Load data (This is my birdnet data that I filtered by applying species-specific
 # confidence or logit score thresholds to).
-load("Data/RDS/bn_data_thresholded.rds")
+load("Data/RDS/bn_dat_thresholded.rds")
+
+bn_data <- bn_dat_filtered_95 |> 
+  select(common_name, sp_code, confidence, logit_score, date, time, year, site, location, disturbance_type,
+         yrs_since_disturbance, threshold_used)
+
 
 # Dataset containing recorded sound levels (dBFS) and known distances to singing Bachman's Sparrows
 bacs_master_temp <- read_csv("Data/CSVs/bacs_master_temp.csv")

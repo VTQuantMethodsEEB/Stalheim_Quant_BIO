@@ -11,7 +11,7 @@ library(Manu) # Even More Fun Colors (NZ Birds), so cool, thanks Kate!
 library(ggthemes)
 
 # Load R data file
-load("Data/RDS/bn_dat_filtered_95.rds")
+load("Data/RDS/bn_dat_thresholded.rds")
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #    Hypotheses ----
@@ -63,7 +63,6 @@ for (i in 1:10000) {
 # Results ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Setting Colors
-wes_palette("IsleofDogs1")
 col <- wes_palette("IsleofDogs1")
 
 # Store the residuals in a dataframe
