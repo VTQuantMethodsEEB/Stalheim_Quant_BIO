@@ -80,8 +80,11 @@ ggplot(species_matrix, aes(x = date, y = count)) +
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #    Some Updated Exploration
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-load("Data/RDS/bn_data_thresholded.rds")
+load("Data/RDS/bn_dat_thresholded.rds")
 
+#KL - this wasn't loading for me but realized it was a typo
+
+#i think this must have gotten renamed because the code doesn't run
 # There is no data from the Okefenokee for 2023, so I am removing it here for community analysis comparison
 bn_data <- bn_data |> 
   filter(year != "2023")
