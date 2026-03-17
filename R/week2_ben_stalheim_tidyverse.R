@@ -7,14 +7,14 @@
 library(tidyverse)
 
 # Load the R data file (it automatically assigns the name as bn_dat_allyears)
-load("Data/RDS/bn_dat_allyears.rds")
+load("Data/RDS/bn_dat_filtered_95.rds") 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #     Tidyverse Exploration
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Filter ~~~~~~~~~~~~~~~~~~~~~
 
-sparrow <- bn_dat_allyears |> 
+sparrow <- bn_dat_filtered_95 |> 
   filter(common_name == "Bachman's Sparrow")
 # This filters the dataset to only include detections of Bachman's Sparrow.
 # But not all detections are correct, or of interest. I know that a confidence
@@ -25,7 +25,7 @@ sparrow_high_conf <- sparrow |>
 # Now I have a dataset of only high-confidence Bachman's Sparrow detections.
 
 # I could also set a universal confidence score threshold of 0.8 for all species.
-bn_dat_filtered <- bn_dat_allyears |> 
+bn_dat_filtered <- bn_dat_filtered_95 |> 
   filter(confidence >= 0.8)
 
 # Find the data where site is NA
@@ -80,13 +80,12 @@ ggplot(species_matrix, aes(x = date, y = count)) +
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #    Some Updated Exploration
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-load("Data/RDS/bn_dat_thresholded.rds")
 
 #KL - this wasn't loading for me but realized it was a typo
 
 #i think this must have gotten renamed because the code doesn't run
 # There is no data from the Okefenokee for 2023, so I am removing it here for community analysis comparison
-bn_data <- bn_data |> 
+bn_data <- bn_dat_filtered_95 |> 
   filter(year != "2023")
 
 # How many species are represented in the dataset

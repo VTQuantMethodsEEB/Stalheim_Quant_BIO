@@ -16,7 +16,7 @@ library(ggthemes)
 
 # Load data (This is my birdnet data that I filtered by applying species-specific
 # confidence or logit score thresholds to).
-load("Data/RDS/bn_dat_thresholded.rds")
+load("Data/RDS/bn_dat_filtered_95.rds") 
 
 bn_data <- bn_dat_filtered_95 |> 
   select(common_name, sp_code, confidence, logit_score, date, time, year, site, location, disturbance_type,

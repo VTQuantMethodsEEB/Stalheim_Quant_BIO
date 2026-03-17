@@ -16,9 +16,9 @@ library(tidyverse)
 
 
 # Load the dataset (I already did quite a bit of cleaning to this dataset)
-load("Data/RDS/bn_dat_allyears.rds") 
+load("Data/RDS/bn_dat_filtered_95.rds") 
 
-birdnet_data <- bn_dat_allyears |> 
+birdnet_data <- bn_dat_filtered_95 |> 
 select(common_name, sp_code, confidence, date, time, year, site, location)
 
 # View the data (this dataset is a little big, I apologize)
@@ -56,3 +56,4 @@ print(raw_detections)
 # Set a universal threshold on the confidence score to remove likely false positives
 birdnet_data_filtered <- birdnet_data |> 
   filter(confidence >= 0.7)
+

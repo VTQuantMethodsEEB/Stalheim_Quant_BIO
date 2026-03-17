@@ -11,7 +11,7 @@ library(Manu) # Even More Fun Colors (NZ Birds), so cool, thanks Kate!
 library(ggthemes)
 
 # Load R data file
-load("Data/RDS/bn_dat_thresholded.rds")
+load("Data/RDS/bn_dat_filtered_95.rds") 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #    Hypotheses ----
@@ -82,7 +82,7 @@ ggplot(res_df, aes(x = difference)) +
 # Calculating the P-Value:
 mean(res>=obs)   
 
-# This shows a p-value of 0.0024, a significant result. This shows that observed mean difference
+# This shows a p-value of 0.0013, a significant result. This shows that observed mean difference
 # in species per point between Sansavilla WMA and the Mission Mine is unlikely to have resulted
 # by chance.
 
