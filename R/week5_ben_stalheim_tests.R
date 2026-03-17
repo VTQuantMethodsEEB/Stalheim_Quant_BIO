@@ -82,7 +82,7 @@ ggplot(res_df, aes(x = difference)) +
 # Calculating the P-Value:
 mean(res>=obs)   
 
-# This shows a p-value of 0.0013, a significant result. This shows that observed mean difference
+# This shows a p-value of 0.0024, a significant result. This shows that observed mean difference
 # in species per point between Sansavilla WMA and the Mission Mine is unlikely to have resulted
 # by chance.
 
