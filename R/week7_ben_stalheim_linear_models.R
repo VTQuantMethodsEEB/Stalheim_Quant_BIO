@@ -4,21 +4,33 @@
 # Date: March, 2026
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Getting Started
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 # Load packages
 library(tidyverse)
 library(performance)
 library(lme4)
 library(corrplot)
+library(ggthemes)
+library(Manu)
+library(ggeffects)
 
 # Load data
 load("Data/RDS/bn_dat_filtered_95.rds")
 
-# Hypothesis: Northern Bobwhite detection rate (and/or relative abundance or occupancy)
-# declines with reclamation age (time since a mining site was reclaimed).
+# Prep ARU effort ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+aru_effort_short <- read_csv("Data/CSVs/aru_effort_short.csv")
+
+aru_effort_long  <- read_csv("Data/CSVs/aru_effort_long.csv") 
+
+# Setting color and themes 
+manu_col_1 <- get_pal("Kaka")[1]
+manu_col_2 <- get_pal("Takahe")[4]
+manu_col_3 <- get_pal("Putangitangi")[2]
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#               PART ONE ---- 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Hypothesis: Northern Bobwhite detection rate declines with reclamation age 
+# (time since a mining site was reclaimed).
 
 # Note: This is count data, so I assume it should be modeled using a Poisson distribution.
 # But to start, I will go through the normal distribution.
@@ -28,49 +40,507 @@ nobo_mine <- bn_dat_filtered_95 |>
   filter(common_name == "Northern Bobwhite",
          location == "mine")
 
-# Summarise the data to make it easier for the model
-nobo_sum <- nobo_mine |> 
-  group_by(site, yrs_since_disturbance) |> 
-  summarise(detections = n(),
-            detections_day = detections/n_distinct(date))
+# Get daily detections
+nobo_daily <- nobo_mine |>
+  group_by(site, date) |>
+  summarise(detections = n(), .groups = "drop") |> 
+  print()
+
+# I have to account for effort (not all sites get the same amount of effort b/c ARUs
+# are silly and cut out)
+nobo_daily_effort <- nobo_daily |>
+  left_join(aru_effort_long |>
+  select(site, date, effort_s), by = c("site", "date")) |>
+  mutate(effort_hr = (effort_s / 60)/60)
+
+# Get unique site, year and disturbance data
+site_disturbance <- nobo_mine |>
+  distinct(site, year, yrs_since_disturbance)
+
+# Join all of this information into one dataframe and calculate detections/min (only for 
+# times when a site was actively being surveyed)
+nobo_daily_joined <- nobo_daily_effort |>
+  mutate(year = year(date)) |>
+  left_join(site_disturbance, by = c("site", "year")) |> 
+  mutate(det_per_hr = detections / effort_hr) |> 
+  print()
 
 # Model the relationship
-bob_mod1 <- lm(detections_day~yrs_since_disturbance, data = nobo_sum)
-lm(detections_day~yrs_since_disturbance, data = nobo_sum)
-summary(bob_mod1)
-# This summary is showing me that the number of Northern Bobwhite detections does
-# decline with years since disturbance. The p-value is 0.00207, a significant result.
-# 
+bob_mod1 <- lm(det_per_hr~yrs_since_disturbance, data = nobo_daily_joined)
 
-# Base R plots:
-par(mfrow=c(2,2)) 
-bob_mod1 <- lm(detections~yrs_since_disturbance, data = nobo_sum) 
-plot(bob_mod1)
+lm(det_per_hr~yrs_since_disturbance, data = nobo_daily_joined)
+
+summary(bob_mod1)
+
+# This summary is showing me that the detection rate for Northern Bobwhite does
+# decline with years since disturbance. The p-value is < 0.05, a significant result.
+# The coefficient is -0.11, and so the model is saying that as years since disturbance
+# increases by 1 unit (i.e., 1 year), Bobwhite detection rate drops by by 0.11 detections/min.
+
+# Base R plots ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+bob_mod1 <- lm(detections~yrs_since_disturbance, data = nobo_daily_joined) 
+
+plot(bob_mod1, 1)
+# This plot shows that my residuals don't fall evenly along the line and their ranges vary
+# across the fitted values.
+plot(bob_mod1, 2)
 # The QQ plot shows some clear deviations from normality as the quantiles do not follow
 # the 1:1 line.
+plot(bob_mod1, 3)
+# Similar issue to the first plot, but range of square-root of residuals still uneven
+plot(bob_mod1, 4)
+# This plot is pointing out the outliers, I believe? Which there are a few of
+plot(bob_mod1, 5)
+# Not sure here, I just liked going through all of the plots. Looks bad I suppose
+plot(bob_mod1, 6)
+# I have no idea what this means, but it does look cool
 
 resid(bob_mod1)
+# Residuals from my model
+
 hist(resid(bob_mod1))
+# Histogram is also showing a clear non-normal distribution
+
 shapiro.test(resid(bob_mod1))
-# The Shapiro test and the histogram show that my residuals are somewhat normally distributed.
-# And therefore, the normal distribution could be used.
+# The Shapiro test and the histogram show that my residuals are significantly non-normally
+# distributed and that I should probably switch to a different distribution for modeling.
 
 # Performance package check
 check_model(bob_mod1)
 # This does not appear to work for me
 
+# Plotting the relationship ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#    2nd Model
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ggplot(nobo_daily_joined, aes(x = yrs_since_disturbance, y = det_per_hr)) +
+  geom_jitter(width = 0.2, height = 0.1, alpha = 0.6, size = 2, color = manu_col_3) +
+  geom_smooth(method = "lm", se = TRUE, color = manu_col_2, fill = manu_col_1) +
+  labs(title = "Relationship Between Years Since Mine Reclamation\nand Detection per Hour of Northern Bobwhite",
+    x = "Years Since Disturbance",
+    y = "Detections per Hour") +
+  scale_x_continuous(breaks = 1:7) +
+  theme_calc() +
+  theme(plot.title = element_text(size = 14),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    axis.text.x = element_text(size = 10),
+    axis.text.y = element_text(size = 10))
 
-# Eastern Screech-Owl
-easo_mine <- bn_dat_filtered_95 |> 
-  filter(common_name == "Eastern Screech-Owl",
-         location == "mine")
+# This graph shows visually what the model output was saying, which is that there is a negative
+# relationship between years since disturbance (mining) and detections/day for Northern Bobwhite. 
+# This species requires disturbed, open environments, and so as the trees regrow, the
+# Bobwhites are less likely to use the space in the same way.
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#   Correlations 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-M <- cor(nobo_sum)
+#ggsave("Figures/bobwhite_disturbance.png",
+ #     width = 8, height = 4, dpi = 300)
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#                  PART TWO ----
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# I think I went a little crazy in part two (mainly because I finally got my hands 
+# on some environmental data). But I also found it really fun making these models and
+# had lots of hypotheses I wanted to test using them. I am still collecting data, so I
+# don't expect to find results that support all of my hypotheses yet, but it is good to get
+# all of these set up and ready to go!
+
+sites <- sort(unique(bn_dat_filtered_95$site))
+all_species_list <- sort(unique(bn_dat_filtered_95$common_name))
+
+all_combos_full <- expand_grid(
+  site    = sites,
+  date    = unique(aru_effort_long$date),
+  species = all_species_list)
+
+# Build detection history for all species
+det_long_full <- all_combos_full |>
+  left_join(
+    aru_effort_long |> select(site, date, effort_s),
+    by = c("site", "date")) |>
+  left_join(
+    bn_dat_filtered_95 |>
+      group_by(site, date, common_name) |>
+      summarise(count = n(), .groups = "drop"),
+    by = c("site", "date", "species" = "common_name")) |>
+  mutate(
+    count = case_when(
+      is.na(effort_s) ~ NA_real_,
+      is.na(count)    ~ 0,
+      TRUE            ~ count),
+    detected = ifelse(count > 0, 1, 0),
+    year = year(date)) |>
+  group_by(year) |>
+  arrange(date) |>
+  mutate(day_within_year = dense_rank(date)) |>
+  ungroup()
+
+# Summarise to species x site x year
+species_site_year <- det_long_full |>
+  group_by(species, site, year) |>
+  summarise(
+    n_detections = sum(detected, na.rm = TRUE),
+    n_surveys    = sum(!is.na(detected)),
+    naive_occ    = max(detected, na.rm = TRUE),
+    total_effort_hr  = round((sum(effort_s, na.rm = TRUE)/60)/60,1),
+    relative_activity = n_detections / total_effort_hr,
+    .groups = "drop") |>
+  filter(n_surveys > 0) |>
+  left_join(
+    bn_dat_filtered_95 |> distinct(site, year, yrs_since_disturbance, location),
+    by = c("site", "year")) |>
+  left_join(
+    bn_dat_filtered_95 |> distinct(common_name, disturbance_dependent) |>
+      rename(species = common_name),
+    by = "species") |>
+  mutate(
+    disturbance_dependent = factor(disturbance_dependent),
+    yrs_sc = as.numeric(scale(yrs_since_disturbance))) |> 
+  print()
+
+# The warning is because I only have Okefenokee data for 2 years (whereas the other locations
+# have data from 3 years). 
+
+# Ok nvm, I think all I want is this, where I have just species richness grouped
+# by site and years since disturbance
+spec_summary <- bn_dat_filtered_95 |> 
+  group_by(site, location, yrs_since_disturbance) |> 
+  summarise(species_count = n_distinct(common_name)) |> 
+  arrange(desc(species_count))
+  
+  
+# Models    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Fit an interactive model
+model_a <- lmer(
+  species_count ~ yrs_since_disturbance *location + (1|site),
+  data   = spec_summary)
+
+summary(model_a)
+
+ggplot(spec_summary, aes(x = yrs_since_disturbance, y = species_count, 
+                          color = location)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  labs(title = "Relationship Disturbance and Species Richness",
+       x = "Years Since Disturbance",
+       y = "Species Richness") +
+  scale_x_continuous(breaks = 1:7) +
+  scale_color_colorblind() +
+  theme_calc() +
+  theme(plot.title = element_text(size = 14),
+        axis.title.x = element_text(size = 12),
+        axis.title.y = element_text(size = 12),
+        axis.text.x = element_text(size = 10),
+        axis.text.y = element_text(size = 10))
+
+# This is an interesting result. My hypothesis was that species richness would decline
+# as years since disturbance increased. However, at the mine, this does make some sense
+# that species richness accumulate, because the vegetation does not regrow in the same way
+# as the other locations. Succession occurs slower, because the soil is compacted and 
+# native vegetation is not encouraged to regrow, so the environment does not become 
+# overgrown in a short amount of time like we would expect in longleaf pine forests. 
+
+# The summary of the model shows this result, where the coefficient for yrs_since_disturbance
+# at the mine is positive, but the coefficients are negative at the other 2 locations. 
+# Okefenokee shows the stronger negative trend compared to Sansavilla. The Okefenokee is 
+# a mature longleaf pine forest, and species might be more closely tied to disturbance 
+# there than the other locations.
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Modeling weather variables (I finally figured out where to source some)
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Does average daily wind speed or average wind speed effect count of species per day?
+# I am filtering to just 2025 for now, to not have all these various years make thing confusing.
+
+daily_richness <- bn_dat_filtered_95 |>
+  filter(year == "2025") |> 
+  group_by(site, date, avg_temp_f, avg_wind_speed_mph, julian_day, avg_altimeter,
+           avg_vis, avg_rel_humidity, total_precipitation_in, avg_wind_dir) |>
+  summarise(n_species = n_distinct(sp_code), .groups = "drop") |> 
+  mutate( # I need to scale all of my variables so that I can include them together in future models
+    avg_temp_scaled        = scale(avg_temp_f),
+    avg_wind_scaled        = scale(avg_wind_speed_mph),
+    julian_day_scaled      = scale(julian_day),
+    avg_altimeter_scaled   = scale(avg_altimeter),
+    avg_vis_scaled         = scale(avg_vis),
+    avg_humidity_scaled    = scale(avg_rel_humidity),
+    total_precip_scaled    = scale(total_precipitation_in),
+    avg_wind_dir_scaled    = scale(avg_wind_dir))
+
+# Just very basic plots to see how some of the variables interacti with one another
+ggplot(daily_richness, aes(julian_day, avg_altimeter)) +
+  geom_point()
+
+ggplot(daily_richness, aes(julian_day, avg_temp_f)) +
+  geom_point()
+
+ggplot(daily_richness, aes(julian_day, avg_vis)) +
+  geom_point()
+
+ggplot(daily_richness, aes(julian_day, avg_rel_humidity)) +
+  geom_point()
+
+# I have to account for random effects at the site level, because I have many repeated measures
+# at the sites level.
+wind_mod <- glmer(
+  n_species ~ avg_wind_scaled + (1|site), data = daily_richness,
+  family = poisson, na.action = na.omit)
+
+summary(wind_mod)
+plot(ggpredict(wind_mod, terms = "avg_wind_scaled", bias_correction = TRUE))
+# Based on the results of the wind model, wind does have appear to have a slight negative effect
+# on count of daily species richness, but this is not significant
+ggplot(daily_richness, aes(x = avg_wind_speed_mph, y = n_species)) + 
+  geom_point() +
+  geom_smooth(method = "glm")
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+temp_mod <- glmer(
+  n_species ~ avg_temp_scaled + (1|site), data = daily_richness,
+  family = poisson, na.action = na.omit)
+
+summary(temp_mod)
+plot(ggpredict(temp_mod, terms = "avg_temp_scaled", bias_correction = TRUE))
+# Based on the results of the temp model, temperature appears to have a signifcant negative
+# effect on count of daily species richness.
+ggplot(daily_richness, aes(x = avg_temp_f, y = n_species)) + 
+  geom_point() +
+  geom_smooth(method = "glm")
+
+# Additive model with temp and wind now ~~~~~~~~~~~~~~~~~~~~~
+temp_wind_mod <- glmer(
+  n_species ~ avg_temp_scaled + avg_wind_scaled + (1|site), 
+  data = daily_richness, family = poisson, na.action = na.omit)
+
+summary(temp_wind_mod)
+# This model really did not improve the fit by much, as AIC did not improve and includes more 
+# paramers. Temperate alone is doing good job.
+
+# Interactive models ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# I would think wind speed might be more impactful coming from certain directions, so...
+interactive_wind_mod <- glmer(
+  n_species ~ avg_wind_dir_scaled * avg_wind_scaled + (1|site), data = daily_richness,
+  family = poisson, na.action = na.omit)
+
+summary(interactive_wind_mod)
+# Wind does not appear to have much effect on detecting species richness during an individual day.
+
+# One more interactive model
+interactive_day_alt_mod <- glmer(
+  n_species ~ julian_day_scaled * avg_altimeter_scaled + (1|site), data = daily_richness,
+  family = poisson, na.action = na.omit)
+
+summary(interactive_day_alt_mod)
+plot(ggpredict(interactive_day_alt_mod, terms = "avg_altimeter_scaled"))
+plot(ggpredict(interactive_day_alt_mod, terms = "julian_day_scaled"))
+# This shows the interaction
+plot(ggpredict(interactive_day_alt_mod, 
+               terms = c("avg_altimeter_scaled", 
+                         "julian_day_scaled [-1, 0, 1]")))
+
+# This model has some interesting results! Where avg daily altimeter (pressure) 
+# appears to have a significant positive effect on the number of bird species detected. 
+# Meanwhile, Julian Day has a significant negative effect on the bird of species detected.
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Here, I just started testing hypotheses on groups of bird species. Specifically, I
+# have 2 main groups: birds that are known to rely on disturbance events (disturbance-dependent) 
+# and birds that are not (non disturbance-dependent). I specifically want to know if 
+# disturbance-dependent bird species experience greater declines (or impacts) as 
+# years since disturbance increase at these different locations. At the mine specifically, 
+# we don't really know the importance the environment can serve these kinds of species. 
+# If disturbance-dependent bird species can persist, then that is an interesting thing to know.
+# However, I predict that disturbance-dependent birds will experience greater declines
+# at the mine than these other environments as disturbance increases. I would like to model
+# species' occupancy, colonization, and extinction rates, but here I am just continuing
+# the basic species richness estimates, but separating the groups and computing the same model
+# as above.
+
+dd_birds <- bn_dat_filtered_95 |> 
+  filter(disturbance_dependent == 1)
+
+sites <- sort(unique(dd_birds$site))
+all_species_list <- sort(unique(dd_birds$common_name))
+
+all_combos_full <- expand_grid(
+  site    = sites,
+  date    = unique(aru_effort_long$date),
+  species = all_species_list)
+
+# Build detection history for all species
+det_long_full <- all_combos_full |>
+  left_join(
+    aru_effort_long |> select(site, date, effort_s),
+    by = c("site", "date")) |>
+  left_join(
+    dd_birds |>
+      group_by(site, date, common_name) |>
+      summarise(count = n(), .groups = "drop"),
+    by = c("site", "date", "species" = "common_name")) |>
+  mutate(
+    count = case_when(
+      is.na(effort_s) ~ NA_real_,
+      is.na(count)    ~ 0,
+      TRUE            ~ count),
+    detected = ifelse(count > 0, 1, 0),
+    year = year(date)) |>
+  group_by(year) |>
+  arrange(date) |>
+  mutate(day_within_year = dense_rank(date)) |>
+  ungroup()
+
+# Summarise to species x site x year
+species_site_year <- det_long_full |>
+  group_by(species, site, year) |>
+  summarise(
+    n_detections = sum(detected, na.rm = TRUE),
+    n_surveys    = sum(!is.na(detected)),
+    naive_occ    = max(detected, na.rm = TRUE),
+    total_effort_hr  = round((sum(effort_s, na.rm = TRUE)/60)/60,1),
+    relative_activity = n_detections / total_effort_hr,
+    .groups = "drop") |>
+  filter(n_surveys > 0) |>
+  left_join(
+    dd_birds |> distinct(site, year, yrs_since_disturbance, location),
+    by = c("site", "year")) |>
+  left_join(
+    dd_birds |> distinct(common_name, disturbance_dependent) |>
+      rename(species = common_name),
+    by = "species") |>
+  mutate(
+    disturbance_dependent = factor(disturbance_dependent),
+    yrs_sc = as.numeric(scale(yrs_since_disturbance))) |> 
+  print()
+
+# Ok nvm, I think all I want is this, where I have just species richness grouped
+# by site and years since disturbance
+dd_summary <- dd_birds |> 
+  group_by(site, location, yrs_since_disturbance) |> 
+  summarise(species_count = n_distinct(common_name)) |> 
+  arrange(desc(species_count))
+
+
+# Models    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Fit an interactive model
+model_a <- lmer(
+  species_count ~ yrs_since_disturbance *location + (1|site),
+  data   = dd_summary)
+
+summary(model_a)
+
+ggplot(dd_summary, aes(x = yrs_since_disturbance, y = species_count, 
+                         color = location)) +
+  geom_jitter(width = 0.2, height = 0.2) +
+  geom_smooth(method = "lm") +
+  labs(title = "Disturbance-Dependent Bird Species and Disturbance",
+       x = "Years Since Disturbance",
+       y = "Richness of Disturbance-Dependent Species") +
+  scale_x_continuous(breaks = 1:7) +
+  scale_color_colorblind() +
+  theme_calc() +
+  theme(plot.title = element_text(size = 14),
+        axis.title.x = element_text(size = 12),
+        axis.title.y = element_text(size = 12),
+        axis.text.x = element_text(size = 10),
+        axis.text.y = element_text(size = 10))
+
+#ggsave("Figures/dd_richness.png",
+ #      width = 8, height = 5, dpi = 300)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Non Disturbance-Dependent Species
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ndd_birds <- bn_dat_filtered_95 |> 
+  filter(disturbance_dependent == 0)
+
+sites <- sort(unique(ndd_birds$site))
+all_species_list <- sort(unique(ndd_birds$common_name))
+
+all_combos_full <- expand_grid(
+  site    = sites,
+  date    = unique(aru_effort_long$date),
+  species = all_species_list)
+
+# Build detection history for all species
+det_long_full <- all_combos_full |>
+  left_join(
+    aru_effort_long |> select(site, date, effort_s),
+    by = c("site", "date")) |>
+  left_join(
+    ndd_birds |>
+      group_by(site, date, common_name) |>
+      summarise(count = n(), .groups = "drop"),
+    by = c("site", "date", "species" = "common_name")) |>
+  mutate(
+    count = case_when(
+      is.na(effort_s) ~ NA_real_,
+      is.na(count)    ~ 0,
+      TRUE            ~ count),
+    detected = ifelse(count > 0, 1, 0),
+    year = year(date)) |>
+  group_by(year) |>
+  arrange(date) |>
+  mutate(day_within_year = dense_rank(date)) |>
+  ungroup()
+
+# Summarise to species x site x year
+species_site_year <- det_long_full |>
+  group_by(species, site, year) |>
+  summarise(
+    n_detections = sum(detected, na.rm = TRUE),
+    n_surveys    = sum(!is.na(detected)),
+    naive_occ    = max(detected, na.rm = TRUE),
+    total_effort_hr  = round((sum(effort_s, na.rm = TRUE)/60)/60,1),
+    relative_activity = n_detections / total_effort_hr,
+    .groups = "drop") |>
+  filter(n_surveys > 0) |>
+  left_join(
+    ndd_birds |> distinct(site, year, yrs_since_disturbance, location),
+    by = c("site", "year")) |>
+  left_join(
+    ndd_birds |> distinct(common_name, disturbance_dependent) |>
+      rename(species = common_name),
+    by = "species") |>
+  mutate(
+    disturbance_dependent = factor(disturbance_dependent),
+    yrs_sc = as.numeric(scale(yrs_since_disturbance))) |> 
+  print()
+
+# Ok nvm, I think all I want is this, where I have just species richness grouped
+# by site and years since disturbance
+ndd_summary <- ndd_birds |> 
+  group_by(site, location, yrs_since_disturbance) |> 
+  summarise(species_count = n_distinct(common_name)) |> 
+  arrange(desc(species_count))
+
+# Fit an interactive model
+model_ndd <- lmer(
+  species_count ~ yrs_since_disturbance *location + (1|site),
+  data   = ndd_summary)
+
+summary(model_ndd)
+
+ggplot(ndd_summary, aes(x = yrs_since_disturbance, y = species_count, 
+                       color = location)) +
+  geom_jitter(width = 0.2, height = 0.2) +
+  geom_smooth(method = "lm") +
+  labs(title = "Non Disturbance-Dependent Bird Species and Disturbance",
+       x = "Years Since Disturbance",
+       y = "Richness of Non Disturbance-Dependent Species") +
+  scale_x_continuous(breaks = 1:7) +
+  scale_color_colorblind() +
+  theme_calc() +
+  theme(plot.title = element_text(size = 14),
+        axis.title.x = element_text(size = 12),
+        axis.title.y = element_text(size = 12),
+        axis.text.x = element_text(size = 10),
+        axis.text.y = element_text(size = 10))
+
+
+#ggsave("Figures/ndd_richness.png",
+ #      width = 8, height = 5, dpi = 300)

@@ -35,3 +35,10 @@ My dataset contains bird detections made using autonomous recording units (ARUs)
 
 - **Data:** bn_dat_filtered_95.rds
 - **R Script:** week5_ben_stalheim_tests
+
+## Week 6, 7, and 8
+- Course: Over the last few weeks, we have been learning about models. Specifically, linear models and the different ways to use them. We learned about univariate models and also multivariate models (with additive or interactive effects). We practiced making models of our own in class and followed along with example data in class. We have also learned about distributions and thinking about what fits our data best. For most of the instances we have practiced linear models using the normal distribution. However, we also practiced with Poisson, Negative Binomial, Binomial, Gamma, Beta (?), and more... Most of my data is count data and uses Poisson distributions. I also have lots of repeated samples, so I have been including random effects in my models. This is structured the same, but has to be fit in a different package and gets the added name of mixed-effects model (fixed and random, I think?). 
+
+-**Data:** bn_dat_filtered_95.rd and aru_effort_long.csv 
+
+-**R Script:** week7_ben_stalheim_linear_models
