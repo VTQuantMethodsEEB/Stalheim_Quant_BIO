@@ -7,10 +7,12 @@
 # Load packages
 library(tidyverse)
 library(performance)
+library(emmeans)
 library(lme4)
 library(corrplot)
 library(ggthemes)
 library(Manu)
+library(effects)
 library(ggeffects)
 
 # Load data
@@ -76,6 +78,7 @@ summary(bob_mod1)
 # decline with years since disturbance. The p-value is < 0.05, a significant result.
 # The coefficient is -0.11, and so the model is saying that as years since disturbance
 # increases by 1 unit (i.e., 1 year), Bobwhite detection rate drops by by 0.11 detections/min.
+plot(allEffects(bob_mod1))
 
 # Base R plots ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 bob_mod1 <- lm(detections~yrs_since_disturbance, data = nobo_daily_joined) 
@@ -244,6 +247,13 @@ ggplot(spec_summary, aes(x = yrs_since_disturbance, y = species_count,
 # a mature longleaf pine forest, and species might be more closely tied to disturbance 
 # there than the other locations.
 
+
+plot(allEffects(model_a))
+# This plot shows the same trends, just broken down more succinctly.
+
+emmeans(model_a,specs=~ yrs_since_disturbance*location)
+all_comparisons <- emmeans(model_a, pairwise ~ yrs_since_disturbance*location)
+all_comparisons$contrasts
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Modeling weather variables (I finally figured out where to source some)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
