@@ -75,8 +75,7 @@ ggplot(res_df, aes(x = difference)) +
   labs(
     title = NULL,
     x = "Residuals (Sansavilla - Mine)",
-    y = "Count"
-  ) +
+    y = "Count") +
   theme_classic()
 
 # Calculating the P-Value:
