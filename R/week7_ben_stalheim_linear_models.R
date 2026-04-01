@@ -590,7 +590,7 @@ community_df_all <- read_csv("Data/CSVs/relative_abundance_estimates.csv") |>
 
 # Subset to a given species (I am also adding scaled predictors here in case)
 species_df_all <- community_df_all |>
-  filter(species == "Chuck-will's-widow")|> 
+  filter(species == "Northern Bobwhite")|> 
   mutate(yrs_since_disturbance_scaled = scale(yrs_since_disturbance))
 
 # Plots to explore:
@@ -646,7 +646,7 @@ mine_species <- species_df_all |>
 
 mine_mod <- glmer(N_mode ~ yrs_since_disturbance + (1|site), 
                   family = poisson,
-                  data = species_df_all)
+                  data = mine_species)
 
 summary(mine_mod)
 
