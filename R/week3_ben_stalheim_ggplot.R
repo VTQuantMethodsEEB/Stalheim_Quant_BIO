@@ -192,7 +192,7 @@ species_matrix_2 <- bn_data |>
 species_mat <- species_matrix_2 |> 
   column_to_rownames("site") |> 
   as.matrix()
-
+library(vegan)
 jaccard_dist <- vegdist(species_mat, method = "jaccard", binary = TRUE)
 
 # NMDS using Jaccard
