@@ -554,3 +554,100 @@ ggplot(ndd_summary, aes(x = yrs_since_disturbance, y = species_count,
 
 #ggsave("Figures/ndd_richness.png",
  #      width = 8, height = 5, dpi = 300)
+
+
+# *Note:* I added some stuff to the very end of my script that I am working on 
+#for my research project and not really sure if I am thinking about it the right
+#way. I am trying to model the effects of disturbance on latent abundance of various
+#bird species. I used Royle-Nichols models in the package unmarked with the
+#function occuRN() to generate latent abundance estimates based on repeated survey 
+#data. I then extracted the empirical Bayes estimates for each site and used these
+#"most likely" estimates (I think that's how they worded it in their documentation).
+#The problem is that I have 3 different study locations, each with different monitoring
+#points within each location, and the data is collected over 3 years. When I try and
+#fit an interactive model where years_since_disturbance*location, I often get errors 
+#where the model cannot fit all these parameters, so I am left grouping and modeling 
+#Abundance ~ Disturbance Age only. But this feels terribly wrong, because my 3 locations
+#are very different. Disturbance type is different (fire vs mining), intensity is different
+#(growing vs nongrowing season burns), and the interactive effect makes the most sense 
+#in my head. It seems my best options might be to just model each location on its own and 
+#remove the interactive effect. But now I have the issue of multiple years, where each year 
+#is independent from one another supposedly, but many species do occupy the same territory
+#over and over. Also, some years are just better for certain bird species, so the year 
+#2025 could have elevated numbers all across one study location, and this throws off
+#the relationship with the disturbance gradient. Anyways, that's where I'm at... not totally sure.
+#I know that I need to use a mixed-effects model to account for the psuedoreplication at 
+#my monitoring points (in code, they are labeled "site"). But I also think I need to
+#use a poisson distribution, because my latent abundance estimates, come as counts... 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#           Research Project Modeling ---- 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Load the relative abundance dataset (generated using occuRN() looped over each year
+# and species)
+community_df_all <- read_csv("Data/CSVs/relative_abundance_estimates.csv") |> 
+  mutate(year = as_factor(year))
+
+# Subset to a given species (I am also adding scaled predictors here in case)
+species_df_all <- community_df_all |>
+  filter(species == "Chuck-will's-widow")|> 
+  mutate(yrs_since_disturbance_scaled = scale(yrs_since_disturbance))
+
+# Plots to explore:
+ggplot(species_df_all, aes(x = site, y = N_mean, color = year)) +
+  geom_point(size = 1.5) +
+  geom_segment(aes(xend = site, yend = 0), alpha = 0.3) +
+  scale_color_colorblind() +
+  labs(
+    title = paste("Relative Abundance of", unique(species_df_all$species),"Across Sites"),
+    x = "Site",
+    y = "Empirical Bayes Mean of Latent Abundance") +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 60, hjust = 1))
+
+ggplot(species_df_all, aes(x = yrs_since_disturbance, y = N_mean, color = year)) +
+  geom_jitter(width = 0.05, height = 0.15, size = 2, alpha = 0.7) +
+  geom_smooth(method = "lm", se = TRUE, color = "darkblue") +
+  scale_color_colorblind() +
+  labs(
+    title = paste("Relative Abundance of", unique(species_df_all$species),"vs Disturbance Age"),
+    x = "Years Since Disturbance",
+    y = "Relative Abundance (N_mean)") +
+  theme_bw()
+
+ggplot(species_df_all, aes(yrs_since_disturbance, N_mean)) +
+  geom_jitter(alpha = 0.6, width = 0.05, height = 0.15, color = "magenta4") +
+  geom_smooth(method = "lm", se = T, color = "salmon", fill = "salmon4", alpha = 0.2) +
+  facet_wrap(~ location) +
+  theme_bw() +
+  labs(
+    title = paste("Relative Abundance of", unique(species_df_all$species), "Across Disturbance Ages"),
+    x = "Years Since Disturbance",
+    y = "Relative Abundance (N_mean)")
+
+# Mixed Effects ~~~~~~~~~~~~~~~~~~~~
+dist_year_mod <- lmer(N_mean ~ yrs_since_disturbance*location + 
+                        (1|site), data = species_df_all)
+
+summary(dist_year_mod)
+
+
+# GLM?
+glm_mod <- glmer(N_mode ~ yrs_since_disturbance*location + (1|site), 
+                 family = poisson,
+                 data = species_df_all)
+
+summary(glm_mod)
+
+# Subset to mine only ~~~~~~~~~
+mine_species <- species_df_all |> 
+  filter(location == "Mine")
+
+mine_mod <- glmer(N_mode ~ yrs_since_disturbance + (1|site), 
+                  family = poisson,
+                  data = species_df_all)
+
+summary(mine_mod)
+
+# And then, I go through each location for each species? This is where I'm really not sure...
