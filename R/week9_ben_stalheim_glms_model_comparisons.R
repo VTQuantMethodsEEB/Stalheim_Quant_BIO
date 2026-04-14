@@ -17,50 +17,86 @@ library(DHARMa)
 # Load relative abundance data
 community_df <- read_csv("Data/CSVs/relative_abundance_estimates.csv") |> 
   mutate(year = as_factor(year))
+# This dataframe stores all of my relative abundance estimates made using 
+# Royle-Nichols models from the unmarked :: occuRN() function.
 
 # Create some other dataframes to model from ~~~~~~~~~~~~~~~~~~
 
-# This creates total rel abund and ratios for my 2 guilds of species (disturbance-dependent or not)
-guild_ratio <- community_df |>  
-  group_by(site, year, yrs_since_disturbance, location) |> 
-  summarise(
-    dd_abund  = sum(N_mean[disturbance_dependent == 1]),
-    ndd_abund = sum(N_mean[disturbance_dependent == 0]),
-    dd_ratio  = dd_abund / (dd_abund + ndd_abund),
-    .groups = "drop")
+# I need only one year of data to avoid pseudoreplication issues and use glm vs glmm, so...
+community_2025 <- community_df |> 
+  filter(year == 2025)
 
 # This calculates species richness of all species and by guild
 richness_df <- community_df |> 
   filter(N_mode > 0) |> 
   group_by(site, year, yrs_since_disturbance, location) |> 
-  summarise(richness = n_distinct(species), 
-            dd_richness  = n_distinct(species[disturbance_dependent == 1]),
-            ndd_richness  = n_distinct(species[disturbance_dependent == 0]),
+  summarise(richness = n_distinct(species),
             .groups = "drop")
 
+richness_df_2025 <- richness_df |> 
+  filter(year == 2025)
+
 # Analyze the effects on a single species at a time (adjust the filter as needed)
+sp <- "Bachman's Sparrow"
+
 species_df <- community_df |> 
-  filter(species == "Northern Bobwhite")
+  filter(species == sp)
+
+species_df_2025 <- species_df |> 
+  filter(year== 2025)
 
 # Same as above, but only look at mining points
-
 mine_species_df <- community_df |> 
   filter(location == "Mine",
-         species == "Northern Bobwhite")
+         species == sp)
+
+# Lambda estimates for entire location rather than by survey point
+sp_lambda <- species_df |> 
+  group_by(year, location) |> 
+  summarise(lambda = mean(lambda), .groups = "drop")
+
+ggplot(sp_lambda, aes(x = year, y = lambda, color = location, group = location)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 3) +
+  scale_color_colorblind() +
+  labs(
+    title = paste("Change in λ of", unique(species_df$species), "Across Years by Location"),
+    x = "Year",
+    y = "λ (Mean Relative Abundance)") +
+  theme_bw()
+
+ggplot(species_df, aes(x = year, y = N_mean , group = site , color = location
+                       )) +
+  #geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  scale_color_colorblind() +
+  labs(
+    title = paste("N_mean Across Years for", unique(species_df$species)),
+    x = "Year",
+    y = "N_mean") +
+  theme_bw()
+
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #        Generalized Linear Models
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# GLM looking at species richness as a response to disturbance age
-glm_species_richness_mod <- glm(richness ~ yrs_since_disturbance*location,
-                                  data = richness_df, family = Gamma)
+# Does relative abundance of modeled species in 2025 vary by disturbance age at
+# the different study locations?
+glm1 <- glm(N_mean ~ yrs_since_disturbance*location, data = species_df_2025,
+            family = Gamma(link = "log"))
+summary(glm1)
+plot(allEffects(glm1))
 
-summary(glm_species_richness_mod)
+# Does species richness vary depending on location in 2025?
+glm2 <- glm(richness ~ location, data = richness_df_2025, family = poisson)
 
-plot(allEffects(glm_species_richness_mod))
+summary(glm2)
 
-testDispersion(glm_species_richness_mod) # Well that don't seem right
-simulationOutput <- simulateResiduals(fittedModel = glm_species_richness_mod, plot = T)
+plot(allEffects(glm2))
+
+testDispersion(glm2) # Well that don't seem right
+simulationOutput <- simulateResiduals(fittedModel = glm2, plot = T)
 
 # For disturbance-dependent bird species richness
 glm_dd_species_richness_mod <- glm(dd_richness ~ yrs_since_disturbance*location,

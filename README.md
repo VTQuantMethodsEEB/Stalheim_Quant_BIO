@@ -44,3 +44,6 @@ My dataset contains bird detections made using autonomous recording units (ARUs)
 -**Data:** bn_dat_filtered_95.rd, aru_effort_long.csv and relative_abundance_estimates.csv
 
 -**R Script:** week7_ben_stalheim_linear_models
+
+## Week 9 and 10
+- Course: We started by learning about generalized linear models (i.e., modeling data that don't fit normal distribution). For my data, I will mostly be using poisson, negative binomial, and binomial distributions. It is really important to check for overdispersion with these kinds of models as standard qq plots are not applicable (outside of the dharma package). 
