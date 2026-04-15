@@ -51,4 +51,4 @@ My dataset contains bird detections made using autonomous recording units (ARUs)
 
  - **Data:** turnover_data.csv
 
- - **R Script:** week9_ben_stalheim_glms_model_comparison.R 
+ - **R Script:** week9_ben_stalheim_glms_model_comparisons.R 
