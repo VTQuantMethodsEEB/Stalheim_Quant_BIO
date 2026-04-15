@@ -8,29 +8,29 @@ library(tidyverse)
 library(lubridate)
 library(spOccupancy)
 
-# Load data -------------------------------------------------------------------
+# ~~~~~~~~~~~~ Load data ~~~~~~~~~~~~
+
 load("Data/RDS/bn_dat_filtered_95.rds")
 aru_effort <- read_csv("Data/CSVs/aru_effort_long.csv")
 
-# Summarise ARU effort to site-year level -------------------------------------
+# ~~~~~~~~~~~~ Summarise ARU effort to site-year level ~~~~~~~~~~~~
 effort <- aru_effort |>
   mutate(
     date      = as.Date(date),
     year      = year(date),
-    site_year = paste(site, year, sep = "_")
-  ) |>
+    site_year = paste(site, year, sep = "_")) |>
   filter(year == 2025) |>
   group_by(site_year) |>
   mutate(survey = dense_rank(date)) |>  
   ungroup()
 
-# Prepare detection data ------------------------------------------------------
+# ~~~~~~~~~~~~ Prepare detection data ~~~~~~~~~~~~
+
 # One row per detection event; survey = rank of recording file within site-year
 bn <- bn_dat_filtered_95 |>
   mutate(
     site_year = paste(site, year, sep = "_"),
-    date = as.Date(date)
-  ) |>
+    date = as.Date(date)) |>
   filter(year == 2025) |>
   group_by(site_year) |>
   mutate(survey = dense_rank(date)) |>   # survey = day
@@ -46,14 +46,14 @@ bn_pa <- bn |>
 survey_lookup <- bn |>
   distinct(site_year, survey)
 
-# Define dimensions -----------------------------------------------------------
+# ~~~~~~~~~~~~ Define dimensions ~~~~~~~~~~~~
 sp.codes   <- sort(unique(bn_pa$common_name))
 site.codes <- sort(unique(bn_pa$site_year))
 N  <- length(sp.codes)    # number of species
-J  <- length(site.codes)  # number of sites (site-years)
-K  <- max(bn_pa$survey)   # maximum number of surveys (replicates)
+J  <- length(site.codes)  # number of sites
+K  <- max(bn_pa$survey)   # maximum number of surveys
 
-# Build 3D detection array ----------------------------------------------------
+# ~~~~~~~~~~~~ Build 3D detection array ~~~~~~~~~~~~
 
 bn_split <- split(bn_pa, bn_pa$common_name)
 survey_list <- split(survey_lookup$survey, survey_lookup$site_year)
@@ -87,18 +87,18 @@ for (i in seq_along(sp.codes)) {
   }
 }
 
-# Check
+# Check to make sure NAs remain
 table(y, useNA = "always")
 
-# Build occupancy covariates --------------------------------------------------
-# Must be a data frame with J rows, ordered to match site.codes
+# ~~~~~~~~~~~~ Build occupancy covariates ~~~~~~~~~~~~
+
 occ.covs <- bn |>
   select(site_year, yrs_since_disturbance, location, year) |>
   distinct() |>
   arrange(match(site_year, site.codes)) |>
   as.data.frame()
 
-# Build detection covariates --------------------------------------------------
+# ~~~~~~~~~~~~ Build detection covariates ~~~~~~~~~~~~
 
 effort_mat <- matrix(NA, nrow = J, ncol = K)
 rownames(effort_mat) <- site.codes
@@ -117,7 +117,7 @@ for (j in seq_along(site.codes)) {
 effort_mat_scaled <- scale(effort_mat)
 det.covs <- list(effort = effort_mat_scaled)
 
-# Fit multi-species occupancy model -------------------------------------------
+# ~~~~~~~~~~~~ Fit multi-species occupancy model ~~~~~~~~~~~~
 fit <- msPGOcc(
   occ.formula = ~ scale(yrs_since_disturbance)*location,
   det.formula  = ~ effort,
@@ -131,18 +131,15 @@ fit <- msPGOcc(
   n.chains  = 3,
   verbose   = TRUE)
 
-# Model check -----------------------------------------------------------------
+# ~~~~~~~~~~~~ Model check ~~~~~~~~~~~~
 summary(fit)
 ppc.fit <- ppcOcc(fit, fit.stat = "freeman-tukey", group = 1)
 summary(ppc.fit)  # Bayesian p-value ~0.5 = good fit
 
-# Extract species richness ----------------------------------------------------
-# z.samples dimensions: n.post x N (species) x J (sites)
+# ~~~~~~~~~~~~ Extract species richness ~~~~~~~~~~~~
 z <- fit$z.samples
-cat("z.samples dimensions:", dim(z), "\n")  # confirm before extracting
 
-# Sum across species (dim 2) for each posterior draw and site
-richness_samples <- apply(z, c(1, 3), sum)  # n.post x J
+richness_samples <- apply(z, c(1, 3), sum)
 
 richness_df <- tibble(
   site_year      = site.codes,
@@ -164,7 +161,7 @@ ggplot(richness_df, aes(x = yrs_since_disturbance, y = richness_mean,
        title = "Detection-corrected Species Richness") +
   theme_bw()
 
-# Detection probability
+# ~~~~~~~~~~~~ Detection probability ~~~~~~~~~~~~
 alpha_intercepts <- fit$alpha.samples[, 1:43]
 det_prob_mean_effort <- apply(plogis(alpha_intercepts), 2, mean)
 det_prob_lower <- apply(plogis(alpha_intercepts), 2, quantile, 0.025)
@@ -177,9 +174,7 @@ det_prob_df <- tibble(
   print()
 
 
-# Occupancy probability
-# psi.samples = posterior occupancy probability
-# Dimensions: n.post x n.species x n.sites
+# ~~~~~~~~~~~~ Occupancy probability ~~~~~~~~~~~~
 dim(fit$psi.samples)
 
 psi_df <- tibble(

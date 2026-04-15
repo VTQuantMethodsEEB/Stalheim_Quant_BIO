@@ -13,137 +13,201 @@ library(effects)
 library(ggeffects)
 library(MASS)
 library(DHARMa)
+library(glmmTMB)
 
-# Load relative abundance data
-community_df <- read_csv("Data/CSVs/relative_abundance_estimates.csv") |> 
-  mutate(year = as_factor(year))
-# This dataframe stores all of my relative abundance estimates made using 
-# Royle-Nichols models from the unmarked :: occuRN() function.
-
-# Create some other dataframes to model from ~~~~~~~~~~~~~~~~~~
-
-# I need only one year of data to avoid pseudoreplication issues and use glm vs glmm, so...
-community_2025 <- community_df |> 
-  filter(year == 2025)
-
-# This calculates species richness of all species and by guild
-richness_df <- community_df |> 
-  filter(N_mode > 0) |> 
-  group_by(site, year, yrs_since_disturbance, location) |> 
-  summarise(richness = n_distinct(species),
-            .groups = "drop")
-
-richness_df_2025 <- richness_df |> 
-  filter(year == 2025)
-
-# Analyze the effects on a single species at a time (adjust the filter as needed)
-sp <- "Bachman's Sparrow"
-
-species_df <- community_df |> 
-  filter(species == sp)
-
-species_df_2025 <- species_df |> 
-  filter(year== 2025)
-
-# Same as above, but only look at mining points
-mine_species_df <- community_df |> 
-  filter(location == "Mine",
-         species == sp)
-
-# Lambda estimates for entire location rather than by survey point
-sp_lambda <- species_df |> 
-  group_by(year, location) |> 
-  summarise(lambda = mean(lambda), .groups = "drop")
-
-ggplot(sp_lambda, aes(x = year, y = lambda, color = location, group = location)) +
-  geom_line(size = 1.2) +
-  geom_point(size = 3) +
-  scale_color_colorblind() +
-  labs(
-    title = paste("Change in λ of", unique(species_df$species), "Across Years by Location"),
-    x = "Year",
-    y = "λ (Mean Relative Abundance)") +
-  theme_bw()
-
-ggplot(species_df, aes(x = year, y = N_mean , group = site , color = location
-                       )) +
-  #geom_line(linewidth = 1) +
-  geom_point(size = 2) +
-  scale_color_colorblind() +
-  labs(
-    title = paste("N_mean Across Years for", unique(species_df$species)),
-    x = "Year",
-    y = "N_mean") +
-  theme_bw()
-
+# Load Data
+turnover_data <- read_csv("Data/CSVs/turnover_data.csv")
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#        Generalized Linear Models
+#      Hypotheses ----
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# Does relative abundance of modeled species in 2025 vary by disturbance age at
-# the different study locations?
-glm1 <- glm(N_mean ~ yrs_since_disturbance*location, data = species_df_2025,
-            family = Gamma(link = "log"))
-summary(glm1)
-plot(allEffects(glm1))
+# My main hypothesis is that land use type influences bird community turnover in
+# the southeastern United States. I predict that reclaimed mining land will have
+# higher turnover compared to mature and young longleaf pine forests.
 
-# Does species richness vary depending on location in 2025?
-glm2 <- glm(richness ~ location, data = richness_df_2025, family = poisson)
+# My other hypothesis is that time since a disturbance event effects bird community
+# turnover rates. In these disturbance-mediated environments, I predict that turnover
+# will increase shortly after a disturbance event as species move in and out, and that
+# turnover will eventually decline and stabilize after some time.
 
-summary(glm2)
-
-plot(allEffects(glm2))
-
-testDispersion(glm2) # Well that don't seem right
-simulationOutput <- simulateResiduals(fittedModel = glm2, plot = T)
-
-# For disturbance-dependent bird species richness
-glm_dd_species_richness_mod <- glm(dd_richness ~ yrs_since_disturbance*location,
-                                data = richness_df, family = poisson)
-
-summary(glm_dd_species_richness_mod)
-
-plot(allEffects(glm_dd_species_richness_mod))
+# At reclaimed mining lands, where the only disturbance event is mine reclamation
+# (they don't introduce fire or thinning), I expect turnover to follow this pattern.
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#        Generalized Linear Mixed Models
-# I am going to use Negative Binomial Models because all
-# of my poisson models looked real bad
+#     Modeling ----
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-single_species <- glmer.nb(N_mode ~ yrs_since_disturbance*location + (1|site),
-                                             data = species_df)
 
-summary(single_species)
+# I first need to set location as a factor (I like the levels, because Mine is first)
+turnover_data <- turnover_data |>
+  mutate(location = factor(location))
 
-plot(allEffects(single_species))
+# I am using a beta distribution for all models because my response variable is bounded
+# between 0 and 1 as a beta diversity metric.
+turnover_mod <- glmmTMB(total_turnover ~ location + (1 | site), data = turnover_data,
+                        family = beta_family(link = "logit"))
+summary(turnover_mod)
+# This summary shows that the model is predicting Okefenokee has a significantly
+# different mean turnover value than the Mine. While Sansavilla is not significantly
+# different, the model shows there are expected differences between this location.
 
-testDispersion(single_species_nb) # Well that does seem better
-simulationOutput <- simulateResiduals(fittedModel = single_species_nb, plot = T)
+plot(ggpredict(turnover_mod, terms = c("location"), bias_correction = TRUE))
+# This plot shows them predicted means with their standard errors for each location
 
-# Right now, I have the species set to Northern Bobwhite. This model is showing me
-# the effects of disturbance age on relative abundance of this species. This model is showing
-# negative effects at all locations, but the effect of disturbance age on relative abundance
-# is significant at the mine. A thing to note, is that disturbance ages only reach 2 years
-# at the Okefenokee, so that is why those error bars get much wider... I think.
+# Pairwise comparisons
+emmeans(turnover_mod, pairwise ~ location, type = "response")
+# After this pairwise comparison and p-value adjustment, there are no significant
+# differences between the means of the land-use types.
 
-# What happens if I separate out the mine before modeling and remove the interactive effect?
-mine_single_species <- glmer.nb(N_mode ~ yrs_since_disturbance + (1|site),
-                        data = mine_species_df)
+# Using emmeans to get SE for eventual plotting
+emm <- emmeans(turnover_mod, ~ location, type = "response") |>
+  as.data.frame() |> 
+  print()
+# When adjusting for pairwise comparisons, there are now no significant differences
+# between the pairs. However, the Mine and Okefenokee still show strong signs of being
+# different. 
 
-summary(mine_single_species)
+# Test Dispersion
+testDispersion(turnover_mod)
+# That doesn't look too bad!
 
-plot(allEffects(mine_single_species))
+# ~~~~~~~~~~~~~~~~~~~~~ Plot raw data and model ~~~~~~~~~~~~~~~~~~~~~~~
+dat.new <- expand.grid(
+  location = unique(turnover_data$location))
 
-# Plot the model with my raw data
-ggplot(mine_species_df, aes(x = yrs_since_disturbance, y = N_mode)) +
-  geom_point() +
-  geom_smooth(color = "green4", fill = "grey60", method = "glm", 
-              method.args = list(family = "poisson")) +
-  theme_classic() +
-  labs(x = "Years Since Disturbance", y = "Relative Abundance") +
-  ggtitle("Effect of Disturbance Age on Relative Abundance of Northern Bobwhite at the Mine")
+# Predict on the response scale
+dat.new$yhat <- predict(turnover_mod, 
+                        newdata = dat.new, 
+                        type = "response",
+                        re.form = NA)  
+
+# Plot raw data points and model predictions
+ggplot(turnover_data, aes(x = location, y = total_turnover, color = location)) +
+  geom_jitter(width = 0.1, size = 2, alpha = 0.4) +
+  geom_point(data = dat.new, aes(x = location, y = yhat),
+             size = 4, shape = 18) + 
+  geom_errorbar(data = emm, aes(x = location, y = response,
+                                ymin = asymp.LCL, ymax = asymp.UCL),
+                width = 0.1, linewidth = 0.8) +
+  scale_color_few() +
+  theme_bw() +
+  labs(title = "Predicted Total Turnover by Location",
+       x = NULL,
+       y = "Total Turnover (Jaccard)") +
+  theme(legend.position = "none")
+
+# I have never written a results statement... but here goes!!
+
+# ~~~~~~~~~~~~~~~ Results Statement ~~~~~~~~~~~~~~~~~~~
+
+# Bird community turnover, measured using the Jaccard dissimilarity index differed 
+# among land-use types (). The model including land-use as a fixed effect and site 
+# as a random effect was preferred by AIC over the null model and those with 
+# added predictors (). Mean turnover at Okefenokee (mature longleaf pine) was estimated
+# to be significantly lower compared to reclaimed mining mining area (p-value = 0.0295).
+# Mean turnover at Sansavilla (young longleaf pine) did not significantly differ from
+# the reclaimed mining area (p-value = 0.0959), but the model did estimate lower mean
+# turnover (0.213 at Sansavilla vs 0.260 at Mission Mine). When comparing between
+# locations using emmeans and implementing Tukey-adjusted p-values, there were no
+# significant differences between the means of any location pair. 
 
 
+#~~~~~~~~~~~~~~~~~~~ Making more models ~~~~~~~~~~~~~~~~~~~~~~~~
+
+# This model tests my other predictor variable (disturbance age)
+turnover_mod2 <- glmmTMB(total_turnover ~ yrs_since_disturbance + (1 | site), data = turnover_data,
+                         family = beta_family(link = "logit"))
+summary(turnover_mod2)
+# Based on this summary output, disturbance age has a positive effect on turnover,
+# meaning older sites have higher turnover. But this is likely conflated with the 
+# fact that the mine has the oldest sites and we already saw that it has higher turnover.
+plot(ggpredict(turnover_mod2, terms = c("yrs_since_disturbance")))
 
 
+# Additive Model of Disturbance Age and Location
+turnover_mod3 <- glmmTMB(total_turnover ~ yrs_since_disturbance + location + (1 | site), data = turnover_data,
+                         family = beta_family(link = "logit"))
+summary(turnover_mod3)
+# Even with the extra parameters added, the Okefenokee is still showing near-significant
+# difference from the Mine in terms of mean turnover rate.
+plot(ggpredict(turnover_mod3, terms = c("yrs_since_disturbance", "location")))
+
+# Interactive Model of Disturbance Age and Location
+turnover_mod4 <- glmmTMB(total_turnover ~ yrs_since_disturbance * location + (1 | site), data = turnover_data,
+                         family = beta_family(link = "logit"))
+summary(turnover_mod4)
+# This shows that both Sansavilla and Okefenokee show increasing turnover rate as disturbance
+# age increases. But that the Mine shows a decreasing turnover rate as disturbance age 
+# increases, in line with my hypothesis. While there are no significant results between
+# the effect sizes between locations, turnover does appear to change differently across
+# ecosystems. 
+plot(ggpredict(turnover_mod4, terms = c("yrs_since_disturbance", "location")))
+emtrends(turnover_mod4, specs = ~ location ,var = "yrs_since_disturbance",
+         type = "response")
+
+# Null Model
+null_mod <- glmmTMB(total_turnover ~ 1, data = turnover_data,
+                    family = beta_family(link = "logit"))
+summary(null_mod)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#     Model Selection ----
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# ~~~~~~~~~~~~~~~~~~~~ Likelihood Ratio Test ~~~~~~~~~~~~~~~~~~~~~~~~
+
+# I am still going to use the same models as before (4 turnover models and null model)
+anova(turnover_mod, turnover_mod2, turnover_mod3, turnover_mod4, null_mod, test = "LRT")
+# According to the LRT, the turnover model 4 (interactive model) is preferred. However,
+# this model gets penalized by AIC because it has more parameters and more Df than
+# the other models. 
+
+# ~~~~~~~~~~~~~~~~~~~~~~ AIC Selection ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+AIC(turnover_mod, turnover_mod2, turnover_mod3, turnover_mod4, null_mod) |> 
+  arrange(AIC)
+
+# And now by AICc
+library(MuMIn)
+library(AICcmodavg)
+AICc(turnover_mod, turnover_mod2, turnover_mod3, turnover_mod4, null_mod)|> 
+  arrange(AICc)
+
+# This shows that turnover_mod with the single parameter is preferred by AIC and AICc.
+# This falls mostly in line with my main hypothesis that the locations (i.e., ecosystem)
+# has the greatest effect on bird community turnover in my study area.
+
+# Alternate formatting
+aic_tab <- aictab(cand.set=list(turnover_mod, turnover_mod2, turnover_mod3, turnover_mod4, null_mod),
+       modnames=c("tmod1","tmod2","tmod3","tmod4","nullmod")) |> 
+  print()
+
+aictab(cand.set=list(turnover_mod, turnover_mod2, turnover_mod3, turnover_mod4, null_mod),
+       modnames=c("tmod1","tmod2","tmod3","tmod4","nullmod"), second.ord = F)
+
+# ~~~~~~~~~~~~~~~~~~~~~~ Model Selection Thoughts ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# The results of model selection are similar, but some methods penalize models for
+# having many parameters (AIC) while log likelihood appears less sensitive to this.
+# In both scenarios, I think I would choose the same model, because it is the simplest
+# model, preferred by AIC, and very similar in log likelihood to all of the others. 
+
+#~~~~~~~~~~~~~~~~~~~~~~ Some Plotting ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Turnover ~ Disturbance Age Faceted by location
+ggplot(turnover_data, aes(x = yrs_since_disturbance, y = total_turnover, color = location)) +
+  geom_point(size = 3, shape = 1) +
+  geom_smooth(method = "lm", se = TRUE, color = "purple4", alpha = 0.2) +
+  facet_grid(~ location) +
+  theme_bw() +
+  labs(x = "Years Since Disturbance",
+       y = "Jaccard Turnover",
+       title = "Does turnover accelerate with time since disturbance?")
+
+# Turnover ~ Disturbance W/O Faceting
+ggplot(turnover_data, aes(x = yrs_since_disturbance, y = total_turnover, color = location)) +
+  geom_point(size = 3, shape = 1) +
+  geom_smooth(method = "lm", se = TRUE, color = "purple4", alpha = 0.2) +
+  theme_bw() +
+  labs(x = "Years Since Disturbance",
+       y = "Jaccard Turnover",
+       title = "Does turnover accelerate with time since disturbance?")

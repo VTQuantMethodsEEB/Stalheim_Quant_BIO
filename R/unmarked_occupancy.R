@@ -101,7 +101,7 @@ summary(umf)
 
 # Fit community occupancy model ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 fit_comm <- occuComm(
-  ~ 1 ~ yrs_since_disturbance*location,  # det ~ occ
+  ~ 1 ~ yrs_since_disturbance*location,  # detection (first) ~ occupancy (second)
   data = umf)
 
 summary(fit_comm)
@@ -115,11 +115,11 @@ rich_post <- richness(fit_comm, posterior = TRUE)
 
 rich_df <- tibble(
   site_year = site.codes,
-  rich_mean = apply(rich_post@samples, 1, mean),     # FIXED: mean across MCMC samples
+  rich_mean = apply(rich_post@samples, 1, mean), 
   rich_lower = apply(rich_post@samples, 1, quantile, 0.025),
   rich_upper = apply(rich_post@samples, 1, quantile, 0.975)) |>
   left_join(sitecov |> rownames_to_column("site_year"), by = "site_year") |> 
-  mutate(obs_rich = obs_rich_correct) |>  # ADD VALIDATION COLUMN
+  mutate(obs_rich = obs_rich_correct) |>  
   print()
 
 rich_df |> select(site_year, obs_rich, rich_mean) |> 
@@ -129,7 +129,7 @@ ggplot(rich_df, aes(yrs_since_disturbance, rich_mean,
                     ymin = rich_lower, ymax = rich_upper, color = location)) +
   geom_ribbon(alpha = 0.3) +
   geom_line() + geom_point() +
-  geom_point(aes(y = obs_rich), shape = 1, size = 3, color = "black") +  # Observed as open circles
+  geom_point(aes(y = obs_rich), shape = 1, size = 3, color = "black") +  
   labs(title = "Community Richness - occuComm", 
        subtitle = "Closed = Model | Open = Observed",
        y = "Species Richness") +
