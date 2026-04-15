@@ -168,7 +168,6 @@ AIC(turnover_mod, turnover_mod2, turnover_mod3, turnover_mod4, null_mod) |>
 
 # And now by AICc
 library(MuMIn)
-library(AICcmodavg)
 AICc(turnover_mod, turnover_mod2, turnover_mod3, turnover_mod4, null_mod)|> 
   arrange(AICc)
 
@@ -177,9 +176,9 @@ AICc(turnover_mod, turnover_mod2, turnover_mod3, turnover_mod4, null_mod)|>
 # has the greatest effect on bird community turnover in my study area.
 
 # Alternate formatting
-aic_tab <- aictab(cand.set=list(turnover_mod, turnover_mod2, turnover_mod3, turnover_mod4, null_mod),
-       modnames=c("tmod1","tmod2","tmod3","tmod4","nullmod")) |> 
-  print()
+library(AICcmodavg)
+aictab(cand.set=list(turnover_mod, turnover_mod2, turnover_mod3, turnover_mod4, null_mod),
+       modnames=c("tmod1","tmod2","tmod3","tmod4","nullmod")) 
 
 aictab(cand.set=list(turnover_mod, turnover_mod2, turnover_mod3, turnover_mod4, null_mod),
        modnames=c("tmod1","tmod2","tmod3","tmod4","nullmod"), second.ord = F)

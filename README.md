@@ -47,3 +47,8 @@ My dataset contains bird detections made using autonomous recording units (ARUs)
 
 ## Week 9 and 10
 - Course: We started by learning about generalized linear models (i.e., modeling data that don't fit normal distribution). For my data, I will mostly be using poisson, negative binomial, and binomial distributions. It is really important to check for overdispersion with these kinds of models as standard qq plots are not applicable (outside of the dharma package). 
+ We then learned about model selection and all of the ways to know what model is working best for our data and hypotheses. These include likelihood ratio tests, information criterion (like AIC), k-fold cross-validation, and more. It is important to check models against each other, but to base all models around hypotheses and not get too stuck in trying every model combination. Modeling should be for hypothesis testing and relevant for what the study is. 
+
+ - **Data:** turnover_data.csv
+
+ - **R Script:** week9_ben_stalheim_glms_model_comparison.R 
