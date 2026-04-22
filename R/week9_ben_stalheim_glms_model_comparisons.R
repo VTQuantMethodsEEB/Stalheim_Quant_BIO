@@ -18,6 +18,9 @@ library(glmmTMB)
 # Load Data
 turnover_data <- read_csv("Data/CSVs/turnover_data.csv")
 
+turnover_data <- turnover_data |> # I am removing this site due to low sample coverage in 2025
+  filter(site != "O-4")
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #      Hypotheses ----
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -101,16 +104,16 @@ ggplot(turnover_data, aes(x = location, y = total_turnover, color = location)) +
 # ~~~~~~~~~~~~~~~ Results Statement ~~~~~~~~~~~~~~~~~~~
 
 # Bird community turnover, measured using the Jaccard dissimilarity index differed 
-# among land-use types (). The model including land-use as a fixed effect and site 
-# as a random effect was preferred by AIC over the null model and those with 
-# added predictors (). Mean turnover at Okefenokee (mature longleaf pine) was estimated
-# to be significantly lower compared to reclaimed mining mining area (p-value = 0.0295).
-# Mean turnover at Sansavilla (young longleaf pine) did not significantly differ from
-# the reclaimed mining area (p-value = 0.0959), but the model did estimate lower mean
-# turnover (0.213 at Sansavilla vs 0.260 at Mission Mine). When comparing between
-# locations using emmeans and implementing Tukey-adjusted p-values, there were no
-# significant differences between the means of any location pair. 
-
+# among land-use types (). The model including only land-use as a fixed effect and site 
+# as a random effect was preferred by AIC over the null model and others (Delta_AIC >2). 
+# Mean turnover at Okefenokee (0.178, mature longleaf pine) was estimated to be 
+# significantly lower compared to reclaimed mining mining area (0.261, p-value = 0.0145).
+# Mean turnover at Sansavilla (0.212, young longleaf pine) did not significantly differ from
+# the reclaimed mining area (p-value = 0.0939), but the model did estimate lower mean
+# turnover (0.212 at Sansavilla vs 0.261 at Mission Mine). When comparing between
+# locations using emmeans and implementing Tukey-adjusted p-values, there was still
+# a significant difference in estimated mean turnover between the Mission Mine and 
+# Okefenokee. 
 
 #~~~~~~~~~~~~~~~~~~~ Making more models ~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -157,7 +160,8 @@ summary(null_mod)
 # ~~~~~~~~~~~~~~~~~~~~ Likelihood Ratio Test ~~~~~~~~~~~~~~~~~~~~~~~~
 
 # I am still going to use the same models as before (4 turnover models and null model)
-anova(turnover_mod, turnover_mod2, turnover_mod3, turnover_mod4, null_mod, test = "LRT")
+anova(turnover_mod, turnover_mod2, turnover_mod3, turnover_mod4, null_mod, test = "LRT") |> 
+  arrange(AIC)
 # According to the LRT, the turnover model 4 (interactive model) is preferred. However,
 # this model gets penalized by AIC because it has more parameters and more Df than
 # the other models. 
@@ -195,7 +199,7 @@ aictab(cand.set=list(turnover_mod, turnover_mod2, turnover_mod3, turnover_mod4, 
 # Turnover ~ Disturbance Age Faceted by location
 ggplot(turnover_data, aes(x = yrs_since_disturbance, y = total_turnover, color = location)) +
   geom_point(size = 3, shape = 1) +
-  geom_smooth(method = "lm", se = TRUE, color = "purple4", alpha = 0.2) +
+  geom_smooth(method = "glm", se = TRUE, color = "purple4", alpha = 0.2) +
   facet_grid(~ location) +
   theme_bw() +
   labs(x = "Years Since Disturbance",

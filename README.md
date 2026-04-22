@@ -49,6 +49,18 @@ My dataset contains bird detections made using autonomous recording units (ARUs)
 - Course: We started by learning about generalized linear models (i.e., modeling data that don't fit normal distribution). For my data, I will mostly be using poisson, negative binomial, and binomial distributions. It is really important to check for overdispersion with these kinds of models as standard qq plots are not applicable (outside of the dharma package). 
  We then learned about model selection and all of the ways to know what model is working best for our data and hypotheses. These include likelihood ratio tests, information criterion (like AIC), k-fold cross-validation, and more. It is important to check models against each other, but to base all models around hypotheses and not get too stuck in trying every model combination. Modeling should be for hypothesis testing and relevant for what the study is. 
 
+ - **Hypothesis:** For this week, I am testing whether bird communities change (i.e., turnover) at different rates across three different disturbance-mediated environments. I am also testing whether time since a disturbance event (years) has an effect on the rate of change in these same bird communities.
+
  - **Data:** turnover_data.csv
 
  - **R Script:** week9_ben_stalheim_glms_model_comparisons.R 
+
+## Week 11 and 12
+- Course: This week, we were introduced to generalized linear mixed models (GLMS), which include random effects. These are effects that we do not want to specifically test as a predictor variable, but things that might have an effect on the response variable. Often, site, or plot is included as a random effect to account for pseudoreplication. This is when the same point is surveyed multiple times, and so the data collected at that point is not truly independent and more similar to itself than to other points. I have this in my data and include site as a random effect. I also measure the amplitude of bird songs by recording individuals. When I model how sound travels, I have to include the individual bird as a random effect because I take multiple recordings from the same individual. 
+We also learned about the different ways to include random effects. This can be through random intercepts (described above), random slopes, nested, and crossed random effects. 
+
+- **Hypothesis:** My hypothesis this week is that mean daily species richness is lowest at reclaimed mining areas, and different across all environments in my study. Similar to last week, I hypothesize that time since a disturbance event decreases mean daily species richnesss across all environments.
+
+- **Data:** bn_dat_filtered_95.rds
+
+- **R Script:** week11_ben_stalheim_glmms.R
