@@ -93,6 +93,9 @@ species_summary <- bn_data |>
             .groups = "drop") |> 
   arrange(desc(raw_detections)) |> 
   print()
+# I just really enjoing looking through all of this data. This is the interesting parts
+# because it dives into specific species, whereas all of the modeling groups the community
+# together. I find it fun and cool!
 
 # ~~~~~~~~~~~~~~~~~~~ Exploring through figure ~~~~~~~~~~~~~~~~~~~~~
 
@@ -106,6 +109,10 @@ bn_data |>
   labs(x = "Site", y = "Number of Species", fill = "Year", title = "Observed Species Richness by Site and Year") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+# Here, you can clearly see the reduced sample size at O-4 in 2025. This is also
+# a plot of alpha diversity. It shows that there is very little difference between
+# survey points at Okefenokee, and quite a bit more variation at Mine and Sansavilla.
+# Mine has clearly less species at each survey point than the other sampling locations.
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #    Calculating Turnover (Beta Diversity) ----
@@ -187,7 +194,7 @@ turnover_results <- pmap_df(
   }) |>
   left_join(bn_data |> distinct(site, location), by = "site") |>
   arrange(site, yr1)
-
+# View results
 turnover_results
 
 disturbance <- bn_data |>
@@ -202,18 +209,12 @@ turnover <- turnover_results |>
          species_gain_lost = beta_nestedness) |> 
   print()
 
+# This is writing the csv, which I normally would just load, but I wanted to be
+# transparent about how I calculated all of my turnover data (see above).
+
 # ~~~~~~~~~~~~~~~~~~~~~~~ Write csv file for turnover ~~~~~~~~~~~~~~~~~~~~~~~
 #write_csv(turnover, "Data/CSVs/turnover_data.csv")
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-#mine_turnover <- turnover |>
-#  filter(location == "mine") 
-
-#okee_turnover <- turnover |>
-#  filter(location == "okefenokee") 
-
-#sansa_turnover <- turnover |>
-#  filter(location == "sansavilla") 
 
 # Quick Visualize
 ggplot(turnover, aes(x = yrs_since_disturbance, y = total_turnover)) +
@@ -727,6 +728,17 @@ ggplot() +
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #       Gamma Diversity ----
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# ~~~~~~~~~~~~~~~~~~~~~~ Hypothesis ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# **My hypothesis** is that gamma diversity (i.e., species richness at broad scale, or 
+# sampling location) varies between my sampling locations. I also want to account
+# for sampling year and will include that as a fixed effect.
+
+# I will be using GLMs to model alpha diversity as a function of the sampling 
+# location and year. No need for random effects.
+
+# ~~~~~~~~~~~~~~~~ Modeling ~~~~~~~~~~~~~~~~~~~~
 
 # Use the location richness summary, which takes detection and species richness over
 # the entire year at each sampling location. 
