@@ -275,23 +275,24 @@ ggplot(turnover, aes(x = location, y = total_turnover, color = location)) +
              size = 3, shape = 16, color = "brown") + 
   geom_errorbar(data = emm, aes(x = location, y = response,
                                 ymin = asymp.LCL, ymax = asymp.UCL),
-                width = 0.1, linewidth = 0.8, color = "purple4") +
+                width = 0.1, linewidth = 0.8, 
+                color = "purple4", alpha = 0.5) +
   scale_color_few() +
   scale_x_discrete(labels = c(
     "mine"     = "Mission Mine",
     "sansavilla"  = "Sansavilla WMA",
     "okefenokee"  = "Okefenokee NWR")) +
   theme_bw() +
-  labs(title = "Predicted Total Turnover by Location",
+  labs(title = "Predicted Turnover Across Ecosystems",
        x = NULL,
-       y = "Total Turnover (Jaccard)") +
+       y = "Turnover") +
   theme(legend.position = "none",
         axis.text.x = element_text(size = 12, color = "black"),
         axis.text.y = element_text(size = 12, color = "black"),
         axis.title.y = element_text(size = 13, color = "black"))
 
 # ~~~~~~~~~~~~~~~~~~ Save plot~~~~~~~~~~~~~~~~~
-#ggsave("Figures/turnover_plot.png",
+#ggsave("Figures/Best_Figures/turnover_plot.png",
 #       width = 7, height = 4, dpi = 300)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -382,7 +383,7 @@ dat.new4$upper <- plogis(pred4$fit + 1.96 * pred4$se.fit)
 
 # Plot
 ggplot(turnover, aes(x = yrs_since_disturbance, y = total_turnover, color = location)) +
-  geom_point(size = 2, alpha = 0.35) +
+  geom_point(size = 2, alpha = 0.7) +
   geom_line(data = dat.new4, aes(x = yrs_since_disturbance, y = yhat, color = location),
             linewidth = 1) +
   geom_ribbon(data = dat.new4, aes(x = yrs_since_disturbance,
@@ -400,7 +401,7 @@ ggplot(turnover, aes(x = yrs_since_disturbance, y = total_turnover, color = loca
   theme_bw() +
   labs(title = "Effect of Disturbance Age on Turnover in Various Ecosystems",
        x = "Years Since Disturbance",
-       y = "Total Turnover (Jaccard)",
+       y = "Turnover",
        color = NULL,
        fill = NULL) +
   theme(legend.position = "bottom",
@@ -408,7 +409,7 @@ ggplot(turnover, aes(x = yrs_since_disturbance, y = total_turnover, color = loca
         axis.title = element_text(size = 13, color = "black"))
 
 # ~~~~~~~~~~~~~~~~~~ Save plot~~~~~~~~~~~~~~~~~
-#ggsave("Figures/disturbance_eco_turnover.png",
+#ggsave("Figures/Best_Figures/disturbance_eco_turnover.png",
 #       width = 7, height = 4, dpi = 300)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -483,6 +484,7 @@ alpha_rich_summary <- bn_dat_filtered_95 |>
   filter(!(site == "O-4" & year == 2025)) |>  # removing O-4 from 2025 because it had so few survey days
   print()
 
+# This is for alpha diversity
 daily_rich_summary <- bn_dat_filtered_95 |> 
   group_by(site, location, date, yrs_since_disturbance) |> 
   summarise(n_species = n_distinct(common_name),
@@ -491,6 +493,7 @@ daily_rich_summary <- bn_dat_filtered_95 |>
   mutate(location = as_factor(location)) |> 
   print()
 
+# This is for gamma diversity
 location_rich_summary <- bn_dat_filtered_95 |> 
   group_by(location, year) |> 
   summarise(n_species = n_distinct(common_name),
@@ -563,11 +566,6 @@ ggplot(location_rich_summary, aes(x = 1, y = n_species, color = factor(year))) +
 # Gamma diversity (i.e., species richness estimates for each location, adding up each
 # survey point). Gamma diversity is lowest at the mine, intermediate at Okefenokee (interesting
 # because alpha diversity is highest here), while gamma diversity is highest at Sansavilla.
-
-# ~~~~~~~~~~~~~ Save plot~~~~~~~~~~~~~~~~
-#ggsave("Figures/gamma_diversity_plot.png",
-#       width = 6, height = 3.5, dpi = 300)
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Does alpha diversity influence the number of daily detections total?
 ggplot(alpha_rich_summary, aes(x = n_species, y = n_detections, color = location)) +
@@ -670,14 +668,16 @@ ggplot() +
              size = 4, shape = 16, color = "brown", alpha = 0.7) +
   geom_errorbar(data = as.data.frame(emmeans(m1, ~location, type = "response")),
                 aes(x = location, ymin = asymp.LCL, ymax = asymp.UCL),
-                width = 0.1, linewidth = 0.8, color = "purple", alpha = 0.6) +
+                width = 0.1, linewidth = 0.8,
+                color = "purple4", alpha = 0.5) +
   scale_color_few() + 
   scale_x_discrete(labels = c(
     "mine"     = "Mission Mine",
     "sansavilla"  = "Sansavilla WMA",
     "okefenokee"  = "Okefenokee NWR")) +
-  labs(y = "Alpha Diversity", 
-       x = NULL,) +
+  labs(title = "Predicted Alpha Diversity Across Ecosystems",
+       y = "Alpha Diversity", 
+       x = NULL) +
   theme_bw() +
   theme(legend.position = "none",
         axis.text.x = element_text(size = 12, color = "black"),
@@ -685,8 +685,8 @@ ggplot() +
         axis.text.y = element_text(size = 10, color = "black"))
 
 # ~~~~~~~~~~~~~ Save plot~~~~~~~~~~~~~~~~
-#ggsave("Figures/alpha_diversity_plot.png",
-#       width = 7, height = 3.5, dpi = 300)
+#ggsave("Figures/Best_Figures/alpha_diversity_plot.png",
+#       width = 7, height = 4, dpi = 300)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # M3:
@@ -715,15 +715,24 @@ ggplot() +
   geom_line(data = pred_data,
             aes(x = yrs_since_disturbance, y = response, color = location),
             linewidth = 1) +
-  scale_color_few() +
-  scale_fill_few() +
-  labs(x = "Years Since Disturbance",
+  scale_color_few(labels = c("mine"       = "Mission Mine",
+                             "okefenokee" = "Okefenokee NWR",
+                             "sansavilla" = "Sansavilla WMA")) +
+  scale_fill_few(labels  = c("mine"       = "Mission Mine",
+                             "okefenokee" = "Okefenokee NWR",
+                             "sansavilla" = "Sansavilla WMA")) +
+  labs(title = "Effect of Disturbance Age on Alpha Diversity in Various Ecosystems",
+       x = "Years Since Disturbance",
        y = "Alpha Diversity",
        color = "Location",
        fill = "Location") +
   theme_bw() +
-  theme(legend.position = "right")
+  theme(legend.position = "bottom")
 
+# ~~~~~~~~~~~~~~~~~~ Save plot~~~~~~~~~~~~~~~~~
+#ggsave("Figures/Best_Figures/disturbance_eco_alpha_diversity.png",
+#      width = 7, height = 4, dpi = 300)
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #       Gamma Diversity ----
@@ -770,7 +779,8 @@ ggplot(location_rich_summary, aes(x = location, y = n_species, color = location)
              size = 3, shape = 16, color = "brown") +
   geom_errorbar(data = emm_gamma, aes(x = location, y = response,
                                       ymin = asymp.LCL, ymax = asymp.UCL),
-                width = 0.1, linewidth = 0.8, color = "purple4") +
+                width = 0.1, linewidth = 0.8, 
+                color = "purple4", alpha = 0.3) +
   scale_color_few() +
   scale_x_discrete(labels = c(
     "mine"       = "Mission Mine",
@@ -779,14 +789,14 @@ ggplot(location_rich_summary, aes(x = location, y = n_species, color = location)
   theme_bw() +
   labs(title = "Predicted Gamma Diversity Across Ecosystems",
        x = NULL,
-       y = "Gamma Diversity (Annual Species Richness)") +
+       y = "Gamma Diversity") +
   theme(legend.position = "none",
         axis.text.x  = element_text(size = 12, color = "black"),
         axis.text.y  = element_text(size = 10, color = "black"),
         axis.title.y = element_text(size = 12, color = "black"))
 
 # ~~~~~~~~~~~~~ Save plot~~~~~~~~~~~~~~~~
-#ggsave("Figures/gamma_diversity_plot.png",
+#ggsave("Figures/Best_Figures/gamma_diversity_plot.png",
 #       width = 7, height = 3.5, dpi = 300)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
