@@ -1,5 +1,5 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#  Title: GLMMs: Daily Species Richness ~ Ecosystem and Disturbance Age 
+#  Title: GLMMs: Alpha Diversity ~ Ecosystem and Disturbance Age 
 #  Author: Ben Stalheim
 #  Date: April, 2026
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

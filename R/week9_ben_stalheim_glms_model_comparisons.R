@@ -18,7 +18,7 @@ library(glmmTMB)
 # Load Data
 turnover_data <- read_csv("Data/CSVs/turnover_data.csv")
 
-turnover_data <- turnover_data |> # I am removing this site due to low sample coverage in 2025
+turnover_data <- turnover_data |> # I am removing this site due to low sample coverage in 2025 (only 7 days)
   filter(site != "O-4")
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
