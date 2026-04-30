@@ -293,7 +293,7 @@ ggplot(turnover, aes(x = location, y = total_turnover, color = location)) +
 
 # ~~~~~~~~~~~~~~~~~~ Save plot~~~~~~~~~~~~~~~~~
 #ggsave("Figures/Best_Figures/turnover_plot.png",
-#       width = 7, height = 4, dpi = 300)
+#h       width = 7, height = 4, dpi = 300)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Turnover ~ Disturbance Age
