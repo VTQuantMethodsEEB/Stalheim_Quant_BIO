@@ -651,3 +651,8 @@ mine_mod <- glmer(N_mode ~ yrs_since_disturbance + (1|site),
 summary(mine_mod)
 
 # And then, I go through each location for each species? This is where I'm really not sure...
+
+
+
+
+

@@ -6,7 +6,7 @@
 
 library(tidyverse)
 library(wesanderson) # Fun Colors
-# devtools::install_github("G-Thomson/Manu") To download the NZ bird color scheme
+#devtools::install_github("G-Thomson/Manu")# To download the NZ bird color scheme
 library(Manu) # Even More Fun Colors (NZ Birds), so cool, thanks Kate!
 library(ggthemes)
 
