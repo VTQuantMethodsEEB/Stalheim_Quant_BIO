@@ -64,3 +64,14 @@ We also learned about the different ways to include random effects. This can be 
 - **Data:** bn_dat_filtered_95.rds
 
 - **R Script:** week11_ben_stalheim_glmms.R
+
+## Week 13 and 14
+- Course: This week, we learned about some special topics. We learned about time series analysis and dealing with temporal autocorrelation. We then learned about power analyses and how to run them in R. And lastly, we learned some basics behind Bayesian statistics and how to run models using this framework. We also went through our final project and conducted peer reviews.
+
+-**Data:** bn_dat_filtered_95.rds
+
+-**R Script:** finalproject_ben_stalheim.R
+
+-**Final Project Output:** "Docs_Outputs/ben_stalheim_final_project_paper.doc
+
+**Note:** My R script should be able to be replicated all on its own to recreate the figures and data I used in my document. There were only a couple brief calculations I made that are not stored there (basic descriptive statistics), but these could also easily be run to check too.
