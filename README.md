@@ -65,8 +65,8 @@ We also learned about the different ways to include random effects. This can be 
 
 - **R Script:** week11_ben_stalheim_glmms.R
 
-## Week 13 and 14
-- Course: This week, we learned about some special topics. We learned about time series analysis and dealing with temporal autocorrelation. We then learned about power analyses and how to run them in R. And lastly, we learned some basics behind Bayesian statistics and how to run models using this framework. We also went through our final project and conducted peer reviews.
+## Week 13 and 14 (Final Project)
+- Course: This week, we learned about some special topics. We learned about time series analysis and dealing with temporal autocorrelation. We then learned about power analyses and how to run them in R. And lastly, we learned some basics behind Bayesian statistics and how to run models using this framework. We also went through our final project and conducted peer reviews. And lastly, we turned in our final project!
 
 -**Data:** bn_dat_filtered_95.rds
 
@@ -74,4 +74,7 @@ We also learned about the different ways to include random effects. This can be 
 
 -**Final Project Output:** "Docs_Outputs/ben_stalheim_final_project_paper.doc
 
-**Note:** My R script should be able to be replicated all on its own to recreate the figures and data I used in my document. There were only a couple brief calculations I made that are not stored there (basic descriptive statistics), but these could also easily be run to check too.
+**Note:** My R script should be able to be replicated all on its own to recreate the figures and data I used in my document. There were only a couple brief calculations I made using the script thesis_stats.R (this just allowed more freedom). I only present daily weather averages and a total species count made from that script, everything else is from the final project script. 
+
+## Thank You!
+- Thank you Kate for a great semester. I learned a lot and really enjoyed the class. All of the materials you provided will be amazing references to look back on as I know I will forget lots of this stuff. But I seriously appreciate all of your help. I feel a lot better about working with my data and thinking about statistical models, code, data prep, and everything else! Thank you!
